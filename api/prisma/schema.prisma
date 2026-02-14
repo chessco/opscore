@@ -1,0 +1,147 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  active    Boolean   @default(true)
+  users     User[]
+  devices   Device[]
+  commands  Command[]
+  audits    AuditLog[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("tenants")
+}
+
+enum UserRole {
+  ADMIN
+  SUPERVISOR
+  OPERATOR
+}
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  password  String
+  fullName  String
+  role      UserRole
+  
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+
+  // Operator specific
+  assignedDevices Device[]
+
+  audits    AuditLog[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  BUSY
+  ERROR
+}
+
+model Device {
+  id          String       @id @default(uuid())
+  androidId   String       @unique
+  name        String
+  status      DeviceStatus @default(OFFLINE)
+  capabilities Json?       // Future use: camera res, battery, etc.
+
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+
+  operatorId  String?
+  operator    User?        @relation(fields: [operatorId], references: [id])
+
+  executions  CommandExecution[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("devices")
+}
+
+enum CommandType {
+  BROADCAST
+  UNICAST
+}
+
+model Command {
+  id          String       @id @default(uuid())
+  type        CommandType
+  action      String       // e.g., "OPEN_URL", "LOCK"
+  payload     Json?
+
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+
+  executions  CommandExecution[]
+
+  createdAt   DateTime     @default(now())
+
+  @@map("commands")
+}
+
+enum ExecutionStatus {
+  PENDING
+  SENT
+  DELIVERED
+  EXECUTED
+  FAILED
+}
+
+model CommandExecution {
+  id        String          @id @default(uuid())
+  status    ExecutionStatus @default(PENDING)
+  result    Json?
+
+  commandId String
+  command   Command         @relation(fields: [commandId], references: [id])
+
+  deviceId  String
+  device    Device          @relation(fields: [deviceId], references: [id])
+
+  updatedAt DateTime        @updatedAt
+
+  @@map("command_executions")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  resource  String
+  details   Json?
+  
+  actorId   String?  // Can be null if system action
+  actor     User?    @relation(fields: [actorId], references: [id])
+
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+
+  timestamp DateTime @default(now())
+
+  @@map("audit_logs")
+}
