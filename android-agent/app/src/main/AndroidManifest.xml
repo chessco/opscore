@@ -28,7 +28,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.PitayaAgent"
-        android:usesCleartextTraffic="false"
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
 
         <!-- Actividad Principal (UI de Admin) -->
@@ -59,11 +60,23 @@
             </intent-filter>
         </receiver>
 
-        <!-- Servicio de Streaming (Foreground) -->
         <service
             android:name=".features.streaming.StreamService"
             android:foregroundServiceType="mediaProjection"
             android:exported="false" />
+
+        <!-- Remote Control Accessibility Service -->
+        <service
+            android:name=".features.input.RemoteControlService"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
 
     </application>
 

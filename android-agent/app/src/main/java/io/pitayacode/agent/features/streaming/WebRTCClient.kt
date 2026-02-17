@@ -2,6 +2,7 @@ package io.pitayacode.agent.features.streaming
 
 import android.content.Context
 import android.util.Log
+import android.media.projection.MediaProjection
 import org.webrtc.*
 
 class WebRTCClient(
@@ -28,7 +29,7 @@ class WebRTCClient(
         PeerConnectionFactory.initialize(options)
 
         peerConnectionFactory = PeerConnectionFactory.builder()
-            .setVideoEncoderFactory(DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, true))
+            .setVideoEncoderFactory(DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, false))
             .setVideoDecoderFactory(DefaultVideoDecoderFactory(rootEglBase.eglBaseContext))
             .createPeerConnectionFactory()
     }
@@ -43,8 +44,8 @@ class WebRTCClient(
         localVideoSource = peerConnectionFactory?.createVideoSource(videoCapturer!!.isScreencast)
         videoCapturer?.initialize(SurfaceTextureHelper.create("CaptureThread", rootEglBase.eglBaseContext), context, localVideoSource!!.capturerObserver)
         
-        // Default to 360p @ 15fps (GRID mode)
-        videoCapturer?.startCapture(640, 360, 15)
+        // High Quality for Remote Control (720p @ 30fps)
+        videoCapturer?.startCapture(1280, 720, 30)
 
         localVideoTrack = peerConnectionFactory?.createVideoTrack("100", localVideoSource)
     }
@@ -57,6 +58,9 @@ class WebRTCClient(
         peerConnection = peerConnectionFactory?.createPeerConnection(rtcConfig, object : PeerConnection.Observer {
             override fun onIceCandidate(candidate: IceCandidate) {
                 signalingClient.sendIceCandidate(candidate)
+            }
+            override fun onIceCandidatesRemoved(p0: Array<out IceCandidate?>?) {
+                TODO("Not yet implemented")
             }
             override fun onIceConnectionChange(newState: PeerConnection.IceConnectionState) {
                 Log.d("WebRTCClient", "IceConnectionState: $newState")
@@ -87,7 +91,49 @@ class WebRTCClient(
         }, MediaConstraints())
     }
     
-    // ... Implement setRemoteDescription, createAnswer support, cleanup ...
+    fun onRemoteSessionReceived(sessionDescription: SessionDescription) {
+        peerConnection?.setRemoteDescription(object : SdpObserver {
+            override fun onCreateSuccess(desc: SessionDescription) {}
+            override fun onSetSuccess() {
+                if (sessionDescription.type == SessionDescription.Type.OFFER) {
+                    createAnswer()
+                }
+            }
+            override fun onCreateFailure(p0: String?) {}
+            override fun onSetFailure(p0: String?) {
+                Log.e("WebRTCClient", "Set Remote Description Failure: $p0")
+            }
+        }, sessionDescription)
+    }
+
+    private fun createAnswer() {
+        peerConnection?.createAnswer(object : SdpObserver {
+            override fun onCreateSuccess(desc: SessionDescription) {
+                peerConnection?.setLocalDescription(this, desc)
+                signalingClient.sendAnswer(desc)
+            }
+            override fun onSetSuccess() {}
+            override fun onCreateFailure(p0: String?) {}
+            override fun onSetFailure(p0: String?) {}
+        }, MediaConstraints())
+    }
+
+    fun onIceCandidateReceived(iceCandidate: IceCandidate) {
+        peerConnection?.addIceCandidate(iceCandidate)
+    }
+
+    fun close() {
+        try {
+            videoCapturer?.stopCapture()
+            videoCapturer?.dispose()
+            localVideoSource?.dispose()
+            peerConnection?.close()
+            peerConnectionFactory?.dispose()
+            rootEglBase.release()
+        } catch (e: Exception) {
+            Log.e("WebRTCClient", "Error closing WebRTC client", e)
+        }
+    }
 }
 
 interface SignalingClient {

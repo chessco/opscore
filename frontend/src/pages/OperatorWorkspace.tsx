@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import BroadcastCommand from '../components/BroadcastCommand';
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { deviceService } from '../services/deviceService';
 import type { Device } from '../services/deviceService';
+import { streamManager } from '../services/streamManager';
 
 
 
@@ -32,6 +33,7 @@ export default function OperatorWorkspace() {
     const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
     const [telemetry, setTelemetry] = useState({ cpu: 24, ram: '3.2', battery: 38, latency: 24 });
     const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
+    const [isVideoMaximized, setIsVideoMaximized] = useState(false);
     const isRoot = location.pathname === '/' || location.pathname === '/workspace';
 
     // Mock stats from previous dashboard
@@ -77,6 +79,21 @@ export default function OperatorWorkspace() {
         <div className="flex h-screen bg-[#0a0c10] text-[#a0a5b1] font-sans selection:bg-blue-500/30 overflow-hidden relative">
             {/* Broadcast Side Panel */}
             <BroadcastCommand isOpen={isBroadcastOpen} onClose={() => setIsBroadcastOpen(false)} />
+
+            {/* Video Maximize Modal */}
+            {isVideoMaximized && (
+                <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <button
+                        onClick={() => setIsVideoMaximized(false)}
+                        className="absolute top-6 right-6 p-4 text-white/50 hover:text-white bg-white/10 hover:bg-white/20 rounded-full transition-all z-50 backdrop-blur-md"
+                    >
+                        <Maximize2 className="rotate-180" size={32} />
+                    </button>
+                    <div className="h-[85vh] aspect-[9/19] relative bg-[#0a0c10] rounded-3xl overflow-hidden border border-[#333] shadow-2xl ring-1 ring-white/10">
+                        <DeviceVideoPlayer deviceId={selectedDevice || ''} />
+                    </div>
+                </div>
+            )}
 
             {/* Left Thin Sidebar - Unified with CRM Navigation */}
             <aside className="w-16 bg-[#11141b] border-r border-[#1e222d] flex flex-col items-center py-6 space-y-6 z-20">
@@ -240,9 +257,8 @@ export default function OperatorWorkspace() {
 
                                             <div className="aspect-[9/19] bg-[#0a0c10] m-2 mt-10 rounded-lg overflow-hidden relative">
                                                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0c10]/20 to-[#0a0c10]/80 z-[2]" />
-                                                <div className={`w-full h-full flex items-center justify-center ${device.status === 'OFFLINE' ? 'grayscale opacity-50' : ''}`}>
-                                                    <div className="w-16 h-1 bg-blue-500/20 rounded-full animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 blur-xl" />
-                                                    <div className="text-[10px] font-mono opacity-20 rotate-[-45deg] select-none">STREAMING...</div>
+                                                <div className={`w-full h-full ${device.status === 'OFFLINE' ? 'grayscale opacity-50 pointer-events-none' : ''}`}>
+                                                    <DeviceVideoPlayer deviceId={device.androidId} minimal />
                                                 </div>
                                                 <div className="absolute bottom-3 left-3 z-[3]">
                                                     <div className={`px-2 py-0.5 rounded text-[8px] font-bold tracking-tighter uppercase ${device.status === 'ONLINE' ? 'bg-green-500 text-white' :
@@ -260,24 +276,24 @@ export default function OperatorWorkspace() {
 
                             {/* Focus Panel */}
                             <aside className="w-[400px] bg-[#0d1017] border-l border-[#1e222d] flex flex-col overflow-y-auto">
-                                <div className="p-6 space-y-6">
+                                <div className="p-4 space-y-6">
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <h3 className="text-xl font-bold text-white tracking-tight">{selectedDevice}</h3>
                                             <p className="text-xs font-mono text-[#4e5564] mt-1 uppercase">IP: 10.0.0.X • ANDROID 13</p>
                                         </div>
-                                        <button className="p-2 hover:bg-white/5 rounded-lg transition-colors text-[#4e5564] hover:text-white">
+                                        <button
+                                            onClick={() => setIsVideoMaximized(true)}
+                                            className="p-2 hover:bg-white/5 rounded-lg transition-colors text-[#4e5564] hover:text-white"
+                                        >
                                             <Maximize2 size={20} />
                                         </button>
                                     </div>
 
-                                    <div className="aspect-[9/16] w-full bg-[#11141b] rounded-2xl border border-[#1e222d] shadow-2xl relative overflow-hidden group">
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                            <div className="w-32 h-32 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin" />
-                                        </div>
-                                        <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity border-2 border-blue-500/20">
-                                            <MousePointer2 className="text-blue-500 animate-pulse" />
-                                        </div>
+                                    {/* Video Container */}
+                                    <div className="aspect-[9/19] w-full bg-[#11141b] rounded-2xl border border-[#1e222d] shadow-2xl relative overflow-hidden group">
+                                        {/* Real Video Element */}
+                                        <DeviceVideoPlayer deviceId={selectedDevice || ''} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
@@ -352,6 +368,64 @@ export default function OperatorWorkspace() {
                 th { background-color: #11141b !important; color: #4e5564 !important; font-weight: bold !important; text-transform: uppercase !important; font-size: 10px !important; letter-spacing: 0.05em !important; }
                 td { border-bottom-color: #1e222d !important; }
             `}</style>
+        </div>
+    );
+}
+
+function DeviceVideoPlayer({ deviceId, minimal = false }: { deviceId: string; minimal?: boolean }) {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [fitMode, setFitMode] = useState<'contain' | 'cover'>('cover');
+    const [hasStream, setHasStream] = useState(false);
+
+    useEffect(() => {
+        const handleStream = (id: string, stream: MediaStream) => {
+            // Check if stream is for this device OR fallback
+            if (id === deviceId || id === 'unknown-device') {
+                if (videoRef.current) {
+                    console.log(`Setting stream for ${deviceId}`);
+                    videoRef.current.srcObject = stream;
+                    setHasStream(true);
+                }
+            }
+        };
+
+        // Subscribe to stream manager updates
+        streamManager.subscribe(handleStream);
+
+        return () => {
+            streamManager.unsubscribe(handleStream);
+        };
+    }, [deviceId]);
+
+    return (
+        <div className="w-full h-full bg-black relative flex items-center justify-center group/video overflow-hidden">
+            {!hasStream && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                    <div className="w-16 h-1 bg-blue-500/20 rounded-full animate-pulse blur-xl" />
+                    <div className="text-[10px] font-mono opacity-20 rotate-[-45deg] select-none">WAITING FOR STREAM...</div>
+                </div>
+            )}
+            <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full transition-all duration-300 relative z-10 ${!hasStream ? 'opacity-0' : 'opacity-100'} ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+            />
+            {!minimal && (
+                <div className="absolute top-2 right-2 flex items-center space-x-2 z-20">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setFitMode(prev => prev === 'contain' ? 'cover' : 'contain'); }}
+                        className="bg-black/50 hover:bg-black/70 text-white text-[9px] px-2 py-1 rounded backdrop-blur-sm border border-white/10 uppercase font-bold tracking-wider transition-colors opacity-0 group-hover/video:opacity-100"
+                    >
+                        {fitMode}
+                    </button>
+                    <div className="bg-red-500/80 text-white text-[9px] px-2 py-1 rounded backdrop-blur-sm font-bold flex items-center shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse mr-1.5" />
+                        LIVE
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

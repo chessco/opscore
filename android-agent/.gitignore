@@ -1,5 +1,43 @@
-/build
-.gradle
-.idea
-*.iml
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (sdk.dir is not valid as a global setting)
 local.properties
+
+# IntelliJ IDEA components
+.idea/
+*.iml
+*.iws
+*.ipr
+*.xml
+
+# Gradle wrapper
+#!gradle/wrapper/gradle-wrapper.jar
+
+# Android specific exclusions
+/local.properties
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+*.apk
+*.ap_
+*.dex
+*.class
+/bin/
+/gen/
+*.ord
+*.log
+*.jks
+*.keystore
+
+# Android Studio Navigation editor temp files
+.navigation/
+
+# Android Studio captures folder
+captures/
+
+# Asset Delivery
+.googleservices/
