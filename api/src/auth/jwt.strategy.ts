@@ -10,10 +10,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: jwtConstants.secret,
+            passReqToCallback: true,
         });
     }
 
-    async validate(payload: any) {
-        return { userId: payload.sub, email: payload.email, role: payload.role, tenantId: payload.tenantId };
+    async validate(req: any, payload: any) {
+        let activeTenantId = payload.tenantId;
+        const targetTenant = req.headers['x-tenant-id'];
+
+        if (payload.role === 'SYSTEM' && targetTenant) {
+            activeTenantId = targetTenant;
+        }
+
+        return { userId: payload.sub, email: payload.email, role: payload.role, tenantId: activeTenantId };
     }
 }

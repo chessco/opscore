@@ -15,7 +15,22 @@ export class AuthController {
 
     @UseGuards(JwtAuthGuard)
     @Get('profile')
-    getProfile(@Request() req) {
-        return req.user;
+    async getProfile(@Request() req) {
+        const user = await this.authService.findProfile(req.user.userId);
+        if (!user) return null;
+        return {
+            id: user.id,
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role,
+            tenantId: user.tenantId,
+            tenant: {
+                id: user.tenant.id,
+                name: user.tenant.name,
+                slug: user.tenant.slug,
+                language: user.tenant.language,
+                active: user.tenant.active
+            }
+        };
     }
 }

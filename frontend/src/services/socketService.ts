@@ -1,6 +1,4 @@
-import { useAuthStore } from '../store/authStore';
-
-type MessageType = 'OFFER' | 'ANSWER' | 'CANDIDATE' | 'COMMAND';
+type MessageType = 'OFFER' | 'ANSWER' | 'CANDIDATE' | 'COMMAND' | 'INPUT';
 
 interface WebSocketMessage {
     type: MessageType;
@@ -9,58 +7,87 @@ interface WebSocketMessage {
     iceCandidate?: any;
     input?: {
         type: 'TOUCH' | 'KEY';
-        action: 'DOWN' | 'UP' | 'MOVE' | 'CLICK';
+        action: 'DOWN' | 'UP' | 'MOVE' | 'CLICK' | 'BACK' | 'HOME' | 'RECENT' | 'NOTIFICATIONS' | 'QS' | 'POWER';
         x?: number;
         y?: number;
         keyCode?: number;
     };
     command?: any;
-    // Add other fields as needed
 }
+
+type ConnectionStatus = 'connecting' | 'open' | 'closed' | 'error';
 
 class SocketService {
     private socket: WebSocket | null = null;
     private listeners: Map<MessageType, (data: any) => void> = new Map();
-    private url = 'ws://localhost:3008/agent'; // Update with proper env var in real app
+    private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
+    private url = 'ws://localhost:3008/agent';
+    private reconnectDelay = 2000;
+    private maxReconnectDelay = 30000;
+    private pendingQueue: WebSocketMessage[] = [];
+
+    private _status: ConnectionStatus = 'closed';
+
+    get status(): ConnectionStatus {
+        return this._status;
+    }
+
+    private setStatus(s: ConnectionStatus) {
+        this._status = s;
+        this.statusListeners.forEach(cb => cb(s));
+    }
+
+    onStatusChange(callback: (status: ConnectionStatus) => void): () => void {
+        this.statusListeners.add(callback);
+        // Immediately notify current status
+        callback(this._status);
+        return () => this.statusListeners.delete(callback);
+    }
 
     connect() {
         if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
             return;
         }
 
-        const token = useAuthStore.getState().token;
-        // In a real app, you might pass the token in the URL or headers (if supported)
-        // For this raw WebSocket implementation, we'll assume the backend validates purely on connection or initial message
-        // But since we built a raw WS gateway, let's just connect.
-
-        console.log('Connecting to WebSocket:', this.url);
+        console.log('[WS] Connecting to:', this.url);
+        this.setStatus('connecting');
         this.socket = new WebSocket(this.url);
 
         this.socket.onopen = () => {
-            console.log('WebSocket Connected');
+            console.log('[WS] Connected');
+            this.reconnectDelay = 2000; // Reset delay on successful connect
+            this.setStatus('open');
+            // Flush pending messages
+            while (this.pendingQueue.length > 0) {
+                const msg = this.pendingQueue.shift()!;
+                this.socket?.send(JSON.stringify(msg));
+            }
         };
 
         this.socket.onmessage = (event) => {
             try {
                 const message: WebSocketMessage = JSON.parse(event.data);
-                // console.log('WS Received:', message.type);
-
                 const listener = this.listeners.get(message.type);
                 if (listener) {
                     listener(message);
                 }
             } catch (e) {
-                console.error('Error parsing WS message', e);
+                console.error('[WS] Error parsing message', e);
             }
         };
 
-        this.socket.onclose = () => {
-            console.log('WebSocket Disconnected. Reconnecting in 5s...');
-            setTimeout(() => this.connect(), 5000);
+        this.socket.onclose = (ev) => {
+            console.log(`[WS] Disconnected (code=${ev.code}). Reconnecting in ${this.reconnectDelay}ms...`);
+            this.setStatus('closed');
+            this.socket = null;
+            setTimeout(() => this.connect(), this.reconnectDelay);
+            // Exponential backoff
+            this.reconnectDelay = Math.min(this.reconnectDelay * 1.5, this.maxReconnectDelay);
         };
 
-        this.socket.onerror = (err) => {
-            console.error('WebSocket Error', err);
+        this.socket.onerror = () => {
+            console.error('[WS] Connection error');
+            this.setStatus('error');
         };
     }
 
@@ -71,8 +98,15 @@ class SocketService {
     send(message: WebSocketMessage) {
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify(message));
+            console.log('[WS] Sent:', message.type, message.deviceId);
         } else {
-            console.warn('WebSocket not open. Cannot send:', message.type);
+            console.warn('[WS] Not open. Queuing:', message.type);
+            // Queue control messages for retry when connection opens
+            if (message.type === 'INPUT') {
+                this.pendingQueue.push(message);
+                // Don't let queue grow unbounded
+                if (this.pendingQueue.length > 20) this.pendingQueue.shift();
+            }
         }
     }
 
@@ -85,3 +119,5 @@ class SocketService {
 }
 
 export const socketService = new SocketService();
+export type { ConnectionStatus };
+

@@ -32,6 +32,12 @@ class WebRTCClient(
             .setVideoEncoderFactory(DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, false))
             .setVideoDecoderFactory(DefaultVideoDecoderFactory(rootEglBase.eglBaseContext))
             .createPeerConnectionFactory()
+
+        // Force AudioManager back to NORMAL mode because WebRTC changes it to IN_COMMUNICATION
+        // which mutes the device's physical speaker.
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        audioManager.mode = android.media.AudioManager.MODE_NORMAL
+        audioManager.isSpeakerphoneOn = true
     }
 
     fun startScreenCapture(permissionIntent: android.content.Intent) {

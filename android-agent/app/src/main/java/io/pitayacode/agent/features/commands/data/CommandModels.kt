@@ -13,7 +13,9 @@ data class WebSocketMessage(
     val outcome: CommandOutcome? = null, // For ACK
     val sdp: SessionDescriptionPayload? = null, // For WebRTC
     val iceCandidate: IceCandidatePayload? = null, // For WebRTC
-    val input: InputPayload? = null
+    val input: InputPayload? = null,
+    val phoneNumber: String? = null, // For DIAL command
+    val interactionId: String? = null // For DIAL command
 )
 
 data class SessionDescriptionPayload(

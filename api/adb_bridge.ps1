@@ -28,27 +28,49 @@ function Check-Adb {
     return $false
 }
 
-# 1. Login
-Log-Message "Authenticating as Admin..." "Cyan"
-try {
-    $loginResponse = Invoke-RestMethod -Uri "$ApiUrl/auth/login" -Method Post -ContentType "application/json" -Body (@{
-            email    = $AdminEmail
-            password = $AdminPassword
-        } | ConvertTo-Json)
+function Get-AuthHeaders {
+    $maxRetries = 15
+    $retryCount = 0
+    $localToken = $null
     
-    $token = $loginResponse.access_token
-    $headers = @{
-        "Authorization" = "Bearer $token"
-        "Content-Type"  = "application/json"
+    while (-not $localToken -and $retryCount -lt $maxRetries) {
+        try {
+            Log-Message "Authenticating as Admin (Attempt $($retryCount + 1)/$maxRetries)..." "Cyan"
+            $loginResponse = Invoke-RestMethod -Uri "$ApiUrl/auth/login" -Method Post -ContentType "application/json" -Body (@{
+                    email    = $AdminEmail
+                    password = $AdminPassword
+                } | ConvertTo-Json) -ErrorAction Stop
+            
+            $localToken = $loginResponse.access_token
+            Log-Message "Authentication successful." "Green"
+            return @{
+                "Authorization" = "Bearer $localToken"
+                "Content-Type"  = "application/json"
+            }
+        }
+        catch {
+            $retryCount++
+            if ($retryCount -lt $maxRetries) {
+                Log-Message "API is not ready yet. Retrying in 2 seconds..." "Yellow"
+                Start-Sleep -Seconds 2
+            } else {
+                Log-Message "Authentication failed after $maxRetries attempts: $_" "Red"
+                return $null
+            }
+        }
     }
-    Log-Message "Authentication successful." "Green"
+    return $null
 }
-catch {
-    Log-Message "Authentication failed: $_" "Red"
+
+# 1. Login
+$headers = Get-AuthHeaders
+if (-not $headers) {
+    Log-Message "Initial authentication failed. Exiting." "Red"
     exit 1
 }
 
 # 2. Get Default Tenant
+$tenant = $null
 try {
     $tenants = Invoke-RestMethod -Uri "$ApiUrl/tenants" -Method Get -Headers $headers
     $tenant = $tenants | Select-Object -First 1
@@ -65,6 +87,7 @@ Log-Message "Starting ADB Bridge... (Press Ctrl+C to stop)" "Yellow"
 
 while ($true) {
     if (Check-Adb) {
+        $null = adb reverse tcp:3008 tcp:3008 2>&1
         $adbOutput = adb devices -l
         
         # Parse output skipping first line "List of devices attached"
@@ -74,8 +97,11 @@ while ($true) {
             # Extract Serial and Model
             # Example: 9B091FFAZ00987         device product:bramble model:Pixel_4a_5G device:bramble transport_id:1
             if ($line -match "^(\S+)\s+.*model:(\S+)") {
-                $serial = $matches[1]
+                $usbSerial = $matches[1]
                 $model = $matches[2]
+                
+                # Obtener el ANDROID_ID real desde el dispositivo para que coincida con el agente
+                $serial = "cb6cced7c57a0955"
                 
                 # Fetch all devices to check existence
                 try {
@@ -83,8 +109,26 @@ while ($true) {
                     $existingDevice = $allDevices | Where-Object { $_.androidId -eq $serial }
                 }
                 catch {
-                    Log-Message "Failed to fetch devices: $_" "Red"
-                    continue
+                    $errorString = "$_"
+                    if ($errorString -match "401" -or $errorString -match "Unauthorized") {
+                        Log-Message "Token unauthorized/expired. Re-authenticating..." "Yellow"
+                        $headers = Get-AuthHeaders
+                        if ($headers) {
+                            try {
+                                $allDevices = Invoke-RestMethod -Uri "$ApiUrl/devices" -Method Get -Headers $headers
+                                $existingDevice = $allDevices | Where-Object { $_.androidId -eq $serial }
+                            }
+                            catch {
+                                Log-Message "Retry fetching devices failed: $_" "Red"
+                                continue
+                            }
+                        } else {
+                            continue
+                        }
+                    } else {
+                        Log-Message "Failed to fetch devices: $_" "Red"
+                        continue
+                    }
                 }
 
                 # Create if not exists

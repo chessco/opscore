@@ -13,6 +13,15 @@ export class UsersService {
         });
     }
 
+    async findProfile(id: string) {
+        return this.prisma.user.findUnique({
+            where: { id },
+            include: {
+                tenant: true,
+            },
+        });
+    }
+
     async create(data: Prisma.UserCreateInput): Promise<User> {
         const hashedPassword = await bcrypt.hash(data.password, 10);
         return this.prisma.user.create({

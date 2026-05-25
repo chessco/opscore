@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { useTranslation } from '../context/LanguageContext';
 import {
     Shield,
     Loader2,
@@ -24,6 +25,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const setAuth = useAuthStore((state) => state.setAuth);
+    const { t } = useTranslation();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -62,8 +64,8 @@ export default function LoginPage() {
                             <Shield className="text-white" size={24} />
                         </div>
                         <div>
-                            <h1 className="text-xl font-black text-white tracking-tighter uppercase leading-none">Nexus Console</h1>
-                            <p className="text-[10px] font-bold text-[#4e5564] tracking-widest mt-1 uppercase">Operator Security Tier-1</p>
+                            <h1 className="text-xl font-black text-white tracking-tighter uppercase leading-none">{t('nexusTitle')}</h1>
+                            <p className="text-[10px] font-bold text-[#4e5564] tracking-widest mt-1 uppercase">{t('securityTier')}</p>
                         </div>
                     </div>
                 </div>
@@ -114,19 +116,19 @@ export default function LoginPage() {
 
                 {/* Left Footer */}
                 <div className="z-10 text-center">
-                    <h2 className="text-xl text-white font-medium mb-2 tracking-tight">Enterprise Multi-Android Infrastructure</h2>
+                    <h2 className="text-xl text-white font-medium mb-2 tracking-tight">{t('infrastructure')}</h2>
                     <p className="text-xs text-[#6b7280] max-w-sm mx-auto leading-relaxed">
-                        Secure orchestration and real-time monitoring of distributed device fleets across global operator nodes.
+                        {t('infraSubtitle')}
                     </p>
                 </div>
 
                 {/* Copyright */}
                 <div className="absolute bottom-6 left-12 text-[10px] text-[#4e5564] font-medium">
-                    © 2024 Nexus Operations Inc.
+                    © 2026 Pitaya Operations Inc.
                 </div>
                 <div className="absolute bottom-6 right-12 flex space-x-6 text-[10px] text-[#4e5564] font-medium uppercase tracking-wider">
-                    <span className="cursor-pointer hover:text-white transition-colors">Documentation</span>
-                    <span className="cursor-pointer hover:text-white transition-colors">Support Portal</span>
+                    <span className="cursor-pointer hover:text-white transition-colors">{t('documentation')}</span>
+                    <span className="cursor-pointer hover:text-white transition-colors">{t('supportPortal')}</span>
                 </div>
             </div>
 
@@ -135,8 +137,8 @@ export default function LoginPage() {
                 <div className="w-full max-w-md">
                     {/* Header */}
                     <div className="mb-10">
-                        <h2 className="text-3xl font-black text-white tracking-tight mb-3">Access Secure Console</h2>
-                        <p className="text-sm text-[#6b7280] font-medium">Please enter your enterprise credentials to continue.</p>
+                        <h2 className="text-3xl font-black text-white tracking-tight mb-3">{t('loginTitle')}</h2>
+                        <p className="text-sm text-[#6b7280] font-medium">{t('loginSubtitle')}</p>
                     </div>
 
                     {/* Error Message */}
@@ -152,13 +154,13 @@ export default function LoginPage() {
 
                         {/* Tenant Selection */}
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase text-[#4e5564] tracking-widest pl-1">Tenant Site / Org</label>
+                            <label className="text-[10px] font-black uppercase text-[#4e5564] tracking-widest pl-1">{t('tenantOrg')}</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <Server size={16} className="text-[#4e5564] group-focus-within:text-blue-500 transition-colors" />
                                 </div>
                                 <select className="w-full bg-[#151921] border border-[#2b303b] text-white text-sm rounded-xl py-3.5 pl-11 pr-10 appearance-none focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all font-medium cursor-pointer hover:bg-[#1a1f29]">
-                                    <option>Select Call Center Site</option>
+                                    <option>{t('selectSite')}</option>
                                     <option>Site A - North America</option>
                                     <option>Site B - Europe</option>
                                 </select>
@@ -170,7 +172,7 @@ export default function LoginPage() {
 
                         {/* Operator ID (Email) */}
                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black uppercase text-[#4e5564] tracking-widest pl-1">Operator ID</label>
+                            <label className="text-[10px] font-black uppercase text-[#4e5564] tracking-widest pl-1">{t('operatorId')}</label>
                             <div className="relative group">
                                 <input
                                     type="email"
@@ -186,8 +188,8 @@ export default function LoginPage() {
                         {/* Security Key (Password) */}
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center pl-1 pr-1">
-                                <label className="text-[10px] font-black uppercase text-[#4e5564] tracking-widest">Security Key</label>
-                                <a href="#" className="text-[10px] font-bold text-blue-500 hover:text-white transition-colors">Forgot?</a>
+                                <label className="text-[10px] font-black uppercase text-[#4e5564] tracking-widest">{t('securityKey')}</label>
+                                <a href="#" className="text-[10px] font-bold text-blue-500 hover:text-white transition-colors">{t('forgot')}</a>
                             </div>
                             <div className="relative group">
                                 <input
@@ -218,7 +220,7 @@ export default function LoginPage() {
                                 <Loader2 className="animate-spin" size={20} />
                             ) : (
                                 <span className="flex items-center">
-                                    Verify Identity
+                                    {t('verifyIdentity')}
                                     <Key size={16} className="ml-2 group-hover:rotate-12 transition-transform" />
                                 </span>
                             )}
@@ -229,11 +231,11 @@ export default function LoginPage() {
                     <div className="mt-10 pt-8 border-t border-[#1e222d] text-center">
                         <div className="flex items-center justify-center space-x-2 text-[#4e5564] mb-6">
                             <span className="h-[1px] w-8 bg-[#2b303b]"></span>
-                            <span className="text-[9px] font-black uppercase tracking-widest">MFA Verification Status</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest">{t('mfaStatus')}</span>
                             <span className="h-[1px] w-8 bg-[#2b303b]"></span>
                         </div>
 
-                        <div className="mb-2 text-[9px] font-bold text-[#6b7280] uppercase tracking-wider">Enter 6-Digit MFA Code</div>
+                        <div className="mb-2 text-[9px] font-bold text-[#6b7280] uppercase tracking-wider">{t('enterMfa')}</div>
                         <div className="flex justify-center space-x-2 mb-6 opacity-30 pointer-events-none grayscale">
                             {[1, 2, 3, 4, 5, 6].map((i) => (
                                 <div key={i} className="w-10 h-12 bg-[#0b0e14] border border-[#2b303b] rounded-lg"></div>
@@ -242,23 +244,23 @@ export default function LoginPage() {
 
                         <div className="flex justify-between px-8">
                             <button className="flex items-center text-[10px] font-bold text-[#4e5564] hover:text-white transition-colors uppercase tracking-wider group">
-                                <RefreshCw size={10} className="mr-1.5 group-hover:rotate-180 transition-transform duration-500" /> Resend Code
+                                <RefreshCw size={10} className="mr-1.5 group-hover:rotate-180 transition-transform duration-500" /> {t('resendCode')}
                             </button>
                             <button className="flex items-center text-[10px] font-bold text-[#4e5564] hover:text-white transition-colors uppercase tracking-wider">
-                                <Key size={10} className="mr-1.5" /> Use Backup Key
+                                <Key size={10} className="mr-1.5" /> {t('backupKey')}
                             </button>
                         </div>
                     </div>
 
                     {/* Footer Links (Mobile only, desktop has generic footer) */}
                     <div className="mt-12 flex justify-center space-x-6 lg:hidden">
-                        <span className="text-[10px] font-bold text-[#4e5564] uppercase tracking-wider">Security Policy</span>
-                        <span className="text-[10px] font-bold text-[#4e5564] uppercase tracking-wider">Compliance Standards</span>
+                        <span className="text-[10px] font-bold text-[#4e5564] uppercase tracking-wider">{t('securityPolicy')}</span>
+                        <span className="text-[10px] font-bold text-[#4e5564] uppercase tracking-wider">{t('compliance')}</span>
                     </div>
 
                     <div className="hidden lg:flex mt-16 justify-between items-center text-[9px] font-bold text-[#353a45] uppercase tracking-widest">
-                        <span className="flex items-center hover:text-[#4e5564] cursor-pointer"><Lock size={8} className="mr-1.5" /> Security Policy</span>
-                        <span className="flex items-center hover:text-[#4e5564] cursor-pointer"><Shield size={8} className="mr-1.5" /> Compliance Standards</span>
+                        <span className="flex items-center hover:text-[#4e5564] cursor-pointer"><Lock size={8} className="mr-1.5" /> {t('securityPolicy')}</span>
+                        <span className="flex items-center hover:text-[#4e5564] cursor-pointer"><Shield size={8} className="mr-1.5" /> {t('compliance')}</span>
                     </div>
                 </div>
             </div>

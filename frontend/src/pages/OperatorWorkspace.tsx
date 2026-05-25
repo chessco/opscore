@@ -16,11 +16,25 @@ import {
     LogOut,
     Rocket,
     Activity,
-    Shield
+    Shield,
+    Settings,
+    ChevronLeft,
+    Circle,
+    Square,
+    Bell,
+    Wifi,
+    WifiOff,
+    MessageSquare,
+    Megaphone,
+    Contact
 } from 'lucide-react';
 import { deviceService } from '../services/deviceService';
 import type { Device } from '../services/deviceService';
 import { streamManager } from '../services/streamManager';
+import { useTranslation } from '../context/LanguageContext';
+import { socketService } from '../services/socketService';
+import type { ConnectionStatus } from '../services/socketService';
+import { marketplaceService } from '../services/marketplaceService';
 
 
 
@@ -28,13 +42,53 @@ export default function OperatorWorkspace() {
     const { user, logout } = useAuthStore();
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
 
     const [devices, setDevices] = useState<Device[]>([]);
     const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
     const [telemetry, setTelemetry] = useState({ cpu: 24, ram: '3.2', battery: 38, latency: 24 });
     const [isBroadcastOpen, setIsBroadcastOpen] = useState(false);
     const [isVideoMaximized, setIsVideoMaximized] = useState(false);
+    const [isControlling, setIsControlling] = useState(false);
+    const [wsStatus, setWsStatus] = useState<ConnectionStatus>('closed');
     const isRoot = location.pathname === '/' || location.pathname === '/workspace';
+    const wsConnected = wsStatus === 'open';
+    const [activeModules, setActiveModules] = useState<string[]>([]);
+
+    useEffect(() => {
+        const fetchModules = async () => {
+            try {
+                const modulesData = await marketplaceService.getModules();
+                const activeIds = modulesData.filter(m => m.isActive).map(m => m.id);
+                setActiveModules(activeIds);
+            } catch (err) {
+                console.error('Failed to load active modules for side navigation', err);
+            }
+        };
+        fetchModules();
+    }, [location.pathname]); // Re-fetch on route shifts to keep synced
+
+    useEffect(() => {
+        setIsControlling(false);
+    }, [selectedDevice]);
+
+    useEffect(() => {
+        // Subscribe to WebSocket connection status changes
+        const unsubscribe = socketService.onStatusChange(setWsStatus);
+        return unsubscribe;
+    }, []);
+
+    const sendKeyCommand = (keyAction: 'BACK' | 'HOME' | 'RECENT' | 'NOTIFICATIONS' | 'QS' | 'POWER') => {
+        if (!selectedDevice) return;
+        socketService.send({
+            type: 'INPUT',
+            deviceId: selectedDevice,
+            input: {
+                type: 'KEY',
+                action: keyAction
+            }
+        });
+    };
 
     // Mock stats from previous dashboard
     const stats = {
@@ -107,59 +161,82 @@ export default function OperatorWorkspace() {
                 <nav className="flex flex-col space-y-4 pt-4">
                     <Link
                         to="/"
-                        title="Workspace"
+                        title={t('workspace')}
                         className={`p-2 rounded-lg transition-all ${isRoot ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                     >
                         <LayoutGrid size={22} />
                     </Link>
 
-                    {user?.role === 'ADMIN' && (
+                    {(activeModules.includes('mod_surveys') || (user?.role as string) === 'SYSTEM' || user?.role === 'ADMIN' || user?.role === 'SUPERVISOR') && (
                         <Link
-                            to="/tenants"
-                            title="Clientes"
-                            className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/tenants') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                            to="/campaigns"
+                            title="Estación de Trabajo de Agente (Campañas)"
+                            className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/campaigns') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                         >
-                            <Building2 size={22} />
+                            <MessageSquare size={22} className={location.pathname.startsWith('/campaigns') ? 'animate-pulse' : ''} />
                         </Link>
                     )}
+
+
 
                     {(user?.role === 'ADMIN' || user?.role === 'SUPERVISOR') && (
                         <>
                             <Link
+                                to="/campaigns-admin"
+                                title="Administrar Campañas"
+                                className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/campaigns-admin') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <Megaphone size={22} />
+                            </Link>
+                            <Link
+                                to="/leads"
+                                title="Gestión de Leads"
+                                className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/leads') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <Contact size={22} />
+                            </Link>
+                            <Link
                                 to="/users"
-                                title="Usuarios"
+                                title={t('users')}
                                 className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/users') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                             >
                                 <Users size={22} />
                             </Link>
                             <Link
                                 to="/devices"
-                                title="Lista Dispositivos"
+                                title={t('devices')}
                                 className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/devices') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                             >
                                 <Smartphone size={22} />
                             </Link>
                             <Link
                                 to="/supervisor"
-                                title="Supervisor Console"
+                                title={t('supervisor')}
                                 className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/supervisor') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                             >
                                 <Activity size={22} />
                             </Link>
                             <Link
                                 to="/audit-logs"
-                                title="Audit Logs"
+                                title={t('auditLogs')}
                                 className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/audit-logs') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                             >
                                 <Shield size={22} />
                             </Link>
                             <button
                                 onClick={() => setIsBroadcastOpen(true)}
-                                title="Broadcast Command"
+                                title={t('broadcast')}
                                 className={`p-2 rounded-lg transition-all ${isBroadcastOpen ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
                             >
                                 <Rocket size={22} />
                             </button>
+                            <Link
+                                to="/settings"
+                                title={t('settings')}
+                                className={`p-2 rounded-lg transition-all ${location.pathname.startsWith('/settings') ? 'text-blue-500 bg-blue-500/10' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <Settings size={22} />
+                            </Link>
                         </>
                     )}
                 </nav>
@@ -168,7 +245,7 @@ export default function OperatorWorkspace() {
 
                 <button
                     onClick={handleLogout}
-                    title="Cerrar Sesión"
+                    title={t('logout')}
                     className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
                 >
                     <LogOut size={22} />
@@ -181,22 +258,22 @@ export default function OperatorWorkspace() {
                 <header className="h-14 border-b border-[#1e222d] flex items-center justify-between px-6 bg-[#0d1017]">
                     <div className="flex items-center space-x-6">
                         <div className="flex items-center space-x-2">
-                            <span className="text-white font-bold tracking-wider text-lg">CONSOLEX</span>
+                            <span className="text-white font-bold tracking-wider text-lg">Pitaya Ops Core</span>
                         </div>
                         <div className="h-4 w-[1px] bg-[#1e222d]" />
 
                         {/* Unified Stats from Dashboard */}
                         <div className="flex items-center space-x-6">
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-[#4e5564] uppercase tracking-tighter leading-none">Devices Online</span>
+                                <span className="text-[9px] font-bold text-[#4e5564] uppercase tracking-tighter leading-none">{t('devicesOnline')}</span>
                                 <span className="text-xs font-mono text-green-500 font-bold">{stats.online}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-[#4e5564] uppercase tracking-tighter leading-none">Active Alerts</span>
+                                <span className="text-[9px] font-bold text-[#4e5564] uppercase tracking-tighter leading-none">{t('activeAlerts')}</span>
                                 <span className="text-xs font-mono text-red-500 font-bold">{stats.alerts}</span>
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[9px] font-bold text-[#4e5564] uppercase tracking-tighter leading-none">Ops Connected</span>
+                                <span className="text-[9px] font-bold text-[#4e5564] uppercase tracking-tighter leading-none">{t('opsConnected')}</span>
                                 <span className="text-xs font-mono text-blue-500 font-bold">{stats.operators}</span>
                             </div>
                         </div>
@@ -205,7 +282,7 @@ export default function OperatorWorkspace() {
                     <div className="flex-1 max-w-xl mx-8 relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4e5564]" size={16} />
                         <input
-                            placeholder="Search devices, IPs, or logs (Cmd + K)"
+                            placeholder={t('searchPlaceholder')}
                             className="w-full bg-[#161b22] border border-[#1e222d] rounded-md py-1.5 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
                         />
                     </div>
@@ -291,10 +368,53 @@ export default function OperatorWorkspace() {
                                     </div>
 
                                     {/* Video Container */}
-                                    <div className="aspect-[9/19] w-full bg-[#11141b] rounded-2xl border border-[#1e222d] shadow-2xl relative overflow-hidden group">
+                                    <div className={`aspect-[9/19] w-full bg-[#11141b] rounded-2xl border shadow-2xl relative overflow-hidden group transition-all duration-300 ${
+                                        isControlling
+                                            ? 'border-amber-500/50 shadow-[0_0_25px_rgba(245,158,11,0.25)] ring-1 ring-amber-500/30'
+                                            : 'border-[#1e222d]'
+                                    }`}>
                                         {/* Real Video Element */}
-                                        <DeviceVideoPlayer deviceId={selectedDevice || ''} />
+                                        <DeviceVideoPlayer deviceId={selectedDevice || ''} isControlling={isControlling} />
                                     </div>
+
+                                    {/* Android Virtual Navigation Bar */}
+                                    {isControlling && (
+                                        <div className="flex justify-center items-center space-x-6 py-2 px-4 bg-[#11141b]/90 border border-[#1e222d] rounded-xl backdrop-blur-md shadow-lg animate-in slide-in-from-bottom duration-300">
+                                            <button
+                                                type="button"
+                                                onClick={() => sendKeyCommand('BACK')}
+                                                title={t('back')}
+                                                className="p-2.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all active:scale-90"
+                                            >
+                                                <ChevronLeft size={20} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => sendKeyCommand('HOME')}
+                                                title={t('home')}
+                                                className="p-2.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all active:scale-90"
+                                            >
+                                                <Circle size={14} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => sendKeyCommand('RECENT')}
+                                                title={t('recents')}
+                                                className="p-2.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all active:scale-90"
+                                            >
+                                                <Square size={14} />
+                                            </button>
+                                            <div className="w-[1px] h-5 bg-[#1e222d]" />
+                                            <button
+                                                type="button"
+                                                onClick={() => sendKeyCommand('NOTIFICATIONS')}
+                                                title={t('notifications')}
+                                                className="p-2.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all active:scale-90"
+                                            >
+                                                <Bell size={18} />
+                                            </button>
+                                        </div>
+                                    )}
 
                                     <div className="grid grid-cols-2 gap-3">
                                         {Object.entries(telemetry).map(([key, value]) => (
@@ -310,16 +430,39 @@ export default function OperatorWorkspace() {
                                         ))}
                                     </div>
 
-                                    <button className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-600/20 flex items-center justify-center space-x-3 transition-all active:scale-95 group">
-                                        <MousePointer2 size={20} />
-                                        <span className="tracking-tight text-sm">TAKE CONTROL</span>
+                                    {/* WS Status Indicator */}
+                                    {!wsConnected && (
+                                        <div className="flex items-center space-x-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs">
+                                            <WifiOff size={14} className="shrink-0" />
+                                            <span className="font-mono">
+                                                {wsStatus === 'connecting' ? t('wsConnecting') : t('wsDisconnected')}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="button"
+                                        disabled={!wsConnected || !selectedDevice}
+                                        onClick={() => setIsControlling(prev => !prev)}
+                                        className={`w-full font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center space-x-3 transition-all group ${
+                                            !wsConnected || !selectedDevice
+                                                ? 'bg-slate-700 text-slate-500 cursor-not-allowed opacity-50'
+                                                : isControlling
+                                                    ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-amber-600/20 active:scale-95'
+                                                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20 active:scale-95'
+                                        }`}
+                                    >
+                                        <MousePointer2 size={20} className={isControlling ? 'animate-pulse' : ''} />
+                                        <span className="tracking-tight text-sm">
+                                            {isControlling ? t('releaseControl') : t('takeControl')}
+                                        </span>
                                     </button>
                                 </div>
                             </aside>
                         </>
                     ) : (
-                        <div className="flex-1 overflow-auto bg-[#0a0c10] p-8 custom-scrollbar">
-                            <div className="max-w-6xl mx-auto">
+                        <div className={`flex-1 overflow-auto bg-[#0a0c10] custom-scrollbar ${location.pathname.startsWith('/campaigns') ? '' : 'p-8'}`}>
+                            <div className={location.pathname.startsWith('/campaigns') ? 'h-full w-full' : 'max-w-6xl mx-auto'}>
                                 <Outlet />
                             </div>
                         </div>
@@ -330,20 +473,26 @@ export default function OperatorWorkspace() {
                 <footer className="h-8 bg-[#0d1017] border-t border-[#1e222d] px-6 flex items-center space-x-6 text-[10px] font-mono uppercase tracking-tighter">
                     <div className="flex items-center space-x-1.5 font-bold text-green-500">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                        <span>{stats.online} ONLINE</span>
+                        <span>{stats.online} {t('online')}</span>
                     </div>
                     <div className="flex items-center space-x-1.5 font-bold text-yellow-500">
                         <div className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-                        <span>0 LAG</span>
+                        <span>0 {t('lag')}</span>
                     </div>
                     <div className="flex items-center space-x-1.5 font-bold text-red-500">
                         <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                        <span>{devices.filter(d => d.status === 'OFFLINE').length} OFFLINE</span>
+                        <span>{devices.filter(d => d.status === 'OFFLINE').length} {t('offline')}</span>
                     </div>
                     <div className="flex-1" />
                     <div className="flex items-center space-x-4 text-[#4e5564]">
-                        <span>SESSION: 02:44:12</span>
-                        <span className="text-blue-500 font-bold uppercase tracking-widest">Stable Connection</span>
+                        <span>{t('session')}: 02:44:12</span>
+                        <div className={`flex items-center space-x-1.5 font-bold uppercase tracking-widest ${
+                            wsStatus === 'open' ? 'text-blue-500' :
+                            wsStatus === 'connecting' ? 'text-yellow-500' : 'text-red-500'
+                        }`}>
+                            {wsStatus === 'open' ? <Wifi size={11} /> : <WifiOff size={11} />}
+                            <span>{wsStatus === 'open' ? t('stableConnection') : wsStatus === 'connecting' ? t('wsConnecting') : t('wsDisconnected')}</span>
+                        </div>
                     </div>
                 </footer>
             </main>
@@ -372,10 +521,77 @@ export default function OperatorWorkspace() {
     );
 }
 
-function DeviceVideoPlayer({ deviceId, minimal = false }: { deviceId: string; minimal?: boolean }) {
+function DeviceVideoPlayer({
+    deviceId,
+    minimal = false,
+    isControlling = false
+}: {
+    deviceId: string;
+    minimal?: boolean;
+    isControlling?: boolean;
+}) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const [fitMode, setFitMode] = useState<'contain' | 'cover'>('cover');
     const [hasStream, setHasStream] = useState(false);
+    const { t } = useTranslation();
+
+    const lastMoveTime = useRef<number>(0);
+
+    const sendPointerEvent = (e: React.PointerEvent<HTMLVideoElement>, action: 'DOWN' | 'MOVE' | 'UP') => {
+        if (!isControlling || !deviceId) return;
+        
+        e.preventDefault();
+        const rect = e.currentTarget.getBoundingClientRect();
+        
+        // Calculate normalized coordinates
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+        
+        // Clamp coordinates between 0 and 1
+        const clampedX = Math.max(0, Math.min(1, x));
+        const clampedY = Math.max(0, Math.min(1, y));
+
+        if (action === 'MOVE') {
+            const now = Date.now();
+            if (now - lastMoveTime.current < 30) return; // 30ms throttle (~33 FPS)
+            lastMoveTime.current = now;
+        }
+
+        socketService.send({
+            type: 'INPUT',
+            deviceId: deviceId,
+            input: {
+                type: 'TOUCH',
+                action: action,
+                x: clampedX,
+                y: clampedY
+            }
+        });
+    };
+
+    const handlePointerDown = (e: React.PointerEvent<HTMLVideoElement>) => {
+        if (!isControlling) return;
+        try {
+            e.currentTarget.setPointerCapture(e.pointerId);
+        } catch (err) {
+            // Ignore capture support issues
+        }
+        sendPointerEvent(e, 'DOWN');
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLVideoElement>) => {
+        sendPointerEvent(e, 'MOVE');
+    };
+
+    const handlePointerUp = (e: React.PointerEvent<HTMLVideoElement>) => {
+        if (!isControlling) return;
+        sendPointerEvent(e, 'UP');
+        try {
+            e.currentTarget.releasePointerCapture(e.pointerId);
+        } catch (err) {
+            // Safe fallback
+        }
+    };
 
     useEffect(() => {
         const handleStream = (id: string, stream: MediaStream) => {
@@ -402,7 +618,7 @@ function DeviceVideoPlayer({ deviceId, minimal = false }: { deviceId: string; mi
             {!hasStream && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
                     <div className="w-16 h-1 bg-blue-500/20 rounded-full animate-pulse blur-xl" />
-                    <div className="text-[10px] font-mono opacity-20 rotate-[-45deg] select-none">WAITING FOR STREAM...</div>
+                    <div className="text-[10px] font-mono opacity-20 rotate-[-45deg] select-none">{t('waitingStream')}</div>
                 </div>
             )}
             <video
@@ -410,11 +626,16 @@ function DeviceVideoPlayer({ deviceId, minimal = false }: { deviceId: string; mi
                 autoPlay
                 playsInline
                 muted
-                className={`w-full h-full transition-all duration-300 relative z-10 ${!hasStream ? 'opacity-0' : 'opacity-100'} ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                style={{ cursor: isControlling ? 'crosshair' : 'default' }}
+                className={`w-full h-full transition-all duration-300 relative z-10 select-none touch-none ${!hasStream ? 'opacity-0' : 'opacity-100'} ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
             />
             {!minimal && (
                 <div className="absolute top-2 right-2 flex items-center space-x-2 z-20">
                     <button
+                        type="button"
                         onClick={(e) => { e.stopPropagation(); setFitMode(prev => prev === 'contain' ? 'cover' : 'contain'); }}
                         className="bg-black/50 hover:bg-black/70 text-white text-[9px] px-2 py-1 rounded backdrop-blur-sm border border-white/10 uppercase font-bold tracking-wider transition-colors opacity-0 group-hover/video:opacity-100"
                     >
@@ -422,7 +643,7 @@ function DeviceVideoPlayer({ deviceId, minimal = false }: { deviceId: string; mi
                     </button>
                     <div className="bg-red-500/80 text-white text-[9px] px-2 py-1 rounded backdrop-blur-sm font-bold flex items-center shadow-[0_0_10px_rgba(239,68,68,0.5)]">
                         <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse mr-1.5" />
-                        LIVE
+                        {t('live')}
                     </div>
                 </div>
             )}

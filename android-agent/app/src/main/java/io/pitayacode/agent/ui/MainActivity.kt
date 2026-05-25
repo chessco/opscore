@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
 
         // Connect to Backend (Use 10.0.2.2 for Emulator, or specific IP for device)
         // TODO: Move URL to configuration/settings
-        commandService.connect("ws://192.168.100.13:3008/agent", "test-token-123")
+        commandService.connect("ws://localhost:3008/agent", "test-token-123")
 
         setContent {
             PitayaAgentTheme {

@@ -5,6 +5,7 @@ export interface Tenant {
     name: string;
     slug: string;
     active: boolean;
+    language?: string;
     createdAt: string;
     updatedAt: string;
 }

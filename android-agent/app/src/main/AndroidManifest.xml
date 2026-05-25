@@ -6,11 +6,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <!-- Streaming: Captura de pantalla y servicio en primer plano -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" /> <!-- Opcional si se requiere audio, WebRTC lo pide -->
     
     <!-- Inicio automático para Kiosk/Always-On -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />

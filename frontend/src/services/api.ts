@@ -6,9 +6,12 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-    const token = useAuthStore.getState().token;
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    const state = useAuthStore.getState() as any;
+    if (state.token) {
+        config.headers.Authorization = `Bearer ${state.token}`;
+    }
+    if (state.user?.tenantId) {
+        config.headers['X-Tenant-ID'] = state.user.tenantId;
     }
     return config;
 });
