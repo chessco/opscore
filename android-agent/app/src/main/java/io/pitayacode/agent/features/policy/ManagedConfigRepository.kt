@@ -30,7 +30,7 @@ class ManagedConfigRepository @Inject constructor(
         }
 
         // PROD: Must use valid Managed Config with public domain
-        // Example: https://callcenter-api.pitayacode.io/v1
+        // Example: https://opscore-api.pitayacode.io/v1
         throw IllegalStateException("Missing backend_base_url in PROD. Device QUARANTINED.")
     }
 
@@ -47,7 +47,7 @@ class ManagedConfigRepository @Inject constructor(
         }
 
         // PROD: Must use valid Managed Config with public domain (WSS)
-        // Example: wss://callcenter-api.pitayacode.io/v1/ws
+        // Example: wss://opscore-api.pitayacode.io/v1/ws
         throw IllegalStateException("Missing backend_ws_url in PROD. Device QUARANTINED.")
     }
 

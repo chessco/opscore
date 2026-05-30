@@ -76,3 +76,10 @@ agent_prefs.xml
 # Heap dumps / Errors
 *.hprof
 *build_error.txt
+
+# Security Keys & Certs
+*.pem
+*.key
+*.jks
+*.keystore
+

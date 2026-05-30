@@ -23,7 +23,7 @@ export default function LeadsAdminPage() {
 
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<string>(initialCampaignId);
-    
+
     const [leads, setLeads] = useState<Lead[]>([]);
     const [loadingLeads, setLoadingLeads] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -77,10 +77,10 @@ export default function LeadsAdminPage() {
     const handleOpenLeadModal = (lead?: Lead) => {
         if (lead) {
             setEditingLead(lead);
-            setLeadForm({ 
-                name: lead.name, 
-                phone: lead.phone, 
-                metadataText: lead.metadata ? JSON.stringify(lead.metadata, null, 2) : '' 
+            setLeadForm({
+                name: lead.name,
+                phone: lead.phone,
+                metadataText: lead.metadata ? JSON.stringify(lead.metadata, null, 2) : ''
             });
         } else {
             setEditingLead(null);
@@ -138,10 +138,10 @@ export default function LeadsAdminPage() {
 
     const handleImportLeads = async () => {
         if (!selectedCampaignId || !leadsInput.trim()) return;
-        
+
         try {
             setImportingLeads(true);
-            
+
             const lines = leadsInput.split('\n').filter(line => line.trim() !== '');
             const parsedLeads = lines.map(line => {
                 const parts = line.split(/[,	]+/).map(p => p.trim());
@@ -172,8 +172,8 @@ export default function LeadsAdminPage() {
         }
     };
 
-    const filteredLeads = leads.filter(l => 
-        l.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredLeads = leads.filter(l =>
+        l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         l.phone.includes(searchTerm)
     );
 
@@ -188,7 +188,7 @@ export default function LeadsAdminPage() {
                     <p className="text-sm text-slate-500 mt-1">Administra la base de datos de contactos por campaña</p>
                 </div>
                 <div className="flex items-center space-x-3">
-                    <button 
+                    <button
                         onClick={() => { setLeadsInput(''); setIsBulkModalOpen(true); }}
                         disabled={!selectedCampaignId}
                         className="bg-[#11141b] hover:bg-blue-500/10 border border-[#1e222d] hover:border-blue-500/30 text-slate-300 hover:text-blue-400 px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center space-x-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -196,7 +196,7 @@ export default function LeadsAdminPage() {
                         <Upload size={16} />
                         <span>Importación Masiva</span>
                     </button>
-                    <button 
+                    <button
                         onClick={() => handleOpenLeadModal()}
                         disabled={!selectedCampaignId}
                         className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider flex items-center space-x-2 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -211,7 +211,7 @@ export default function LeadsAdminPage() {
                 <div className="p-4 border-b border-[#1e222d] flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#0a0c10]">
                     <div className="flex items-center space-x-3 w-full sm:w-auto">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">Campaña:</label>
-                        <select 
+                        <select
                             value={selectedCampaignId}
                             onChange={(e) => setSelectedCampaignId(e.target.value)}
                             className="w-full sm:w-64 bg-[#11141b] border border-[#1e222d] rounded-lg py-2 px-3 text-sm text-white focus:outline-none focus:border-blue-500 cursor-pointer"
@@ -225,8 +225,8 @@ export default function LeadsAdminPage() {
 
                     <div className="relative w-full sm:w-72">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             placeholder="Buscar por nombre o teléfono..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -274,24 +274,23 @@ export default function LeadsAdminPage() {
                                             </div>
                                         </td>
                                         <td className="py-3 px-6">
-                                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${
-                                                lead.status === 'NEW' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                                                lead.status === 'COMPLETED' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
-                                                'bg-slate-800 text-slate-400 border-slate-700'
-                                            }`}>
+                                            <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded border ${lead.status === 'NEW' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                    lead.status === 'COMPLETED' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        'bg-slate-800 text-slate-400 border-slate-700'
+                                                }`}>
                                                 {lead.status}
                                             </span>
                                         </td>
                                         <td className="py-3 px-6 text-right">
                                             <div className="flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
+                                                <button
                                                     onClick={() => handleOpenLeadModal(lead)}
                                                     className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
                                                     title="Editar Lead"
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={() => handleDeleteLead(lead.id)}
                                                     className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"
                                                     title="Eliminar Lead"
@@ -324,42 +323,42 @@ export default function LeadsAdminPage() {
                         <div className="p-5 space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nombre Completo</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     value={leadForm.name}
-                                    onChange={(e) => setLeadForm({...leadForm, name: e.target.value})}
+                                    onChange={(e) => setLeadForm({ ...leadForm, name: e.target.value })}
                                     className="w-full bg-[#0a0c10] border border-[#1e222d] rounded-lg py-2.5 px-3 text-white text-sm focus:outline-none focus:border-blue-500"
                                     placeholder="Ej. Juan Pérez"
                                 />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Teléfono</label>
-                                <input 
-                                    type="tel" 
+                                <input
+                                    type="tel"
                                     value={leadForm.phone}
-                                    onChange={(e) => setLeadForm({...leadForm, phone: e.target.value})}
+                                    onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })}
                                     className="w-full bg-[#0a0c10] border border-[#1e222d] rounded-lg py-2.5 px-3 text-white text-sm focus:outline-none focus:border-blue-500 font-mono"
                                     placeholder="+52 55 1234 5678"
                                 />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Metadatos (JSON Opcional)</label>
-                                <textarea 
+                                <textarea
                                     value={leadForm.metadataText}
-                                    onChange={(e) => setLeadForm({...leadForm, metadataText: e.target.value})}
+                                    onChange={(e) => setLeadForm({ ...leadForm, metadataText: e.target.value })}
                                     className="w-full bg-[#0a0c10] border border-[#1e222d] rounded-lg py-2.5 px-3 text-white text-sm focus:outline-none focus:border-blue-500 font-mono h-28 resize-none custom-scrollbar"
                                     placeholder='{&#10;  "segment": "Retail",&#10;  "city": "CDMX"&#10;}'
                                 />
                             </div>
                         </div>
                         <div className="p-5 border-t border-[#1e222d] flex justify-end space-x-3 bg-[#0a0c10]">
-                            <button 
+                            <button
                                 onClick={() => setIsLeadModalOpen(false)}
                                 className="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-colors"
                             >
                                 Cancelar
                             </button>
-                            <button 
+                            <button
                                 onClick={handleSaveLead}
                                 disabled={!leadForm.name || !leadForm.phone}
                                 className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-white/50 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center space-x-2 transition-colors"
@@ -388,14 +387,14 @@ export default function LeadsAdminPage() {
                         <div className="p-5 space-y-4">
                             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                                 <p className="text-xs text-blue-400 leading-relaxed">
-                                    Pega la lista de contactos en el área de texto abajo. 
-                                    El formato esperado por línea es: <strong>Nombre, Teléfono</strong> o <strong>Nombre[TAB]Teléfono</strong>.<br/>
-                                    <em>Ejemplo:</em><br/>
-                                    <span className="font-mono text-white">Juan Perez, +52 55 1234 5678</span><br/>
+                                    Pega la lista de contactos en el área de texto abajo.
+                                    El formato esperado por línea es: <strong>Nombre, Teléfono</strong> o <strong>Nombre[TAB]Teléfono</strong>.<br />
+                                    <em>Ejemplo:</em><br />
+                                    <span className="font-mono text-white">Juan Perez, +52 55 1234 5678</span><br />
                                     <span className="font-mono text-white">María López, +52 55 8765 4321</span>
                                 </p>
                             </div>
-                            <textarea 
+                            <textarea
                                 value={leadsInput}
                                 onChange={(e) => setLeadsInput(e.target.value)}
                                 className="w-full bg-[#0a0c10] border border-[#1e222d] rounded-lg py-3 px-4 text-white text-sm focus:outline-none focus:border-blue-500 h-64 font-mono custom-scrollbar"
@@ -403,13 +402,13 @@ export default function LeadsAdminPage() {
                             />
                         </div>
                         <div className="p-5 border-t border-[#1e222d] flex justify-end space-x-3 bg-[#0a0c10]">
-                            <button 
+                            <button
                                 onClick={() => setIsBulkModalOpen(false)}
                                 className="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white transition-colors"
                             >
                                 Cancelar
                             </button>
-                            <button 
+                            <button
                                 onClick={handleImportLeads}
                                 disabled={!leadsInput.trim() || importingLeads}
                                 className="bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-white/50 text-white px-6 py-2 rounded-lg text-sm font-bold flex items-center space-x-2 transition-colors"

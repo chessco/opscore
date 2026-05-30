@@ -312,7 +312,7 @@ export default function CampaignsWorkspacePage() {
     };
 
     // Construct the config JSON for the QR code
-    const serverUrl = import.meta.env.VITE_API_URL || window.location.origin;
+    const serverUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3008`;
     const qrConfigJson = JSON.stringify({
         server_url: serverUrl,
         auth_token: user?.token || localStorage.getItem('auth-storage')?.match(/"token":"(.*?)"/)?.[1] || '',

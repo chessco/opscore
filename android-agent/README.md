@@ -24,7 +24,7 @@ adb shell dpm set-device-owner io.pitayacode.agent/.features.policy.AgentDeviceA
 
 ### 2. Managed Configurations
 El agente se configura mediante restricciones de aplicación (Managed Configs). Claves principales:
--   `backend_base_url`: URL del API (ej. `https://callcenterapi.pitayacode.io`).
+-   `backend_base_url`: URL del API (ej. `https://opscoreapi.pitayacode.io`).
 -   `tenant_id`: Identificador del tenant.
 -   `logging_level`: Nivel de logs (INFO, DEBUG).
 
@@ -90,13 +90,13 @@ Se incluye un `MockBackend` en `src/test` para pruebas unitarias sin servidor.
 En producción, el agente se conecta EXCLUSIVAMENTE al dominio público sin puertos expuestos.
 
 ### Topología
--   **Dominio Público**: `https://callcenter-api.pitayacode.io`
--   **Upstream Interno**: `http://callcenter:3005` (Docker Network)
+-   **Dominio Público**: `https://opscore-api.pitayacode.io`
+-   **Upstream Interno**: `http://opscore:3005` (Docker Network)
 
 ### Requisitos de NPM
 El Reverse Proxy debe configurarse con:
 -   **Scheme**: `http`
--   **Forward Host**: `callcenter`
+-   **Forward Host**: `opscore`
 -   **Forward Port**: `3005`
 -   **Websocket Support**: `ON` (Crucial para `/v1/ws/device/commands`)
 -   **Block Common Exploits**: `ON`
@@ -104,6 +104,6 @@ El Reverse Proxy debe configurarse con:
 -   **Timeouts**: Incrementar `proxy_read_timeout` y `proxy_send_timeout` a `3600s` para mantener las conexiones WebSocket vivas.
 
 ### Managed Configs (Prod)
--   `backend_base_url`: `https://callcenter-api.pitayacode.io/v1`
--   `backend_ws_url`: `wss://callcenter-api.pitayacode.io/v1/ws`
+-   `backend_base_url`: `https://opscore-api.pitayacode.io/v1`
+-   `backend_ws_url`: `wss://opscore-api.pitayacode.io/v1/ws`
 

@@ -3,11 +3,11 @@ version: '3.8'
 services:
   mysql:
     image: mysql:8.0
-    container_name: callcenter-mysql
+    container_name: opscore-mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: callcenter
+      MYSQL_DATABASE: opscore
     ports:
       - "3306:3306"
     volumes:
@@ -17,10 +17,10 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-    container_name: callcenter-api
+    container_name: opscore-api
     restart: always
     environment:
-      DATABASE_URL: "mysql://root:root@mysql:3306/callcenter"
+      DATABASE_URL: "mysql://root:root@mysql:3306/opscore"
       PORT: 3008
     ports:
       - "3008:3008"
@@ -30,16 +30,16 @@ services:
       - ./api:/usr/src/app
       - /usr/src/app/node_modules
 
-  frontend:
+  web:
     build:
-      context: ./frontend
+      context: ./web
       dockerfile: Dockerfile
-    container_name: callcenter-frontend
+    container_name: opscore-web
     restart: always
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
+      - ./web:/app
       - /app/node_modules
 
 volumes:

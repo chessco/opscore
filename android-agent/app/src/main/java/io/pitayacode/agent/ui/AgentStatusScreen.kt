@@ -429,7 +429,7 @@ fun DialerScreen(viewModel: AgentViewModel) {
                                 }
                             }
                         }
-                        "radio" -> {
+                        "radio", "multiple_choice" -> {
                             Card(
                                 modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                                 colors = CardDefaults.cardColors(containerColor = SurfaceElevated),
@@ -444,12 +444,12 @@ fun DialerScreen(viewModel: AgentViewModel) {
                                             modifier = Modifier.padding(vertical = 4.dp)
                                         ) {
                                             RadioButton(
-                                                selected = surveyAnswers[step.id] == option,
-                                                onClick = { surveyAnswers[step.id] = option },
+                                                selected = surveyAnswers[step.id] == option.value,
+                                                onClick = { surveyAnswers[step.id] = option.value },
                                                 colors = RadioButtonDefaults.colors(selectedColor = ElectricCyan)
                                             )
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text(option, color = TextPrimary)
+                                            Text(option.label, color = TextPrimary)
                                         }
                                     }
                                 }

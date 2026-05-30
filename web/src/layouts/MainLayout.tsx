@@ -16,7 +16,7 @@ export default function MainLayout() {
             {/* Sidebar */}
             <aside className="w-64 bg-slate-900 text-white flex flex-col">
                 <div className="p-4 border-b border-slate-800">
-                    <h1 className="text-xl font-bold">CallCenter Admin</h1>
+                    <h1 className="text-xl font-bold">OpsCore Admin</h1>
                 </div>
 
                 <nav className="flex-1 p-4 space-y-2">

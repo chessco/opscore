@@ -55,8 +55,14 @@ data class SurveyStep(
     val id: String,
     val type: String,   // "link" | "text" | "radio" | "checkbox" | "number"
     val question: String,
-    val url: String? = null,           // if type == "link"
-    val options: List<String>? = null  // if type == "radio" | "checkbox"
+    val url: String? = null,
+    val options: List<SurveyOption>? = null
+)
+
+data class SurveyOption(
+    val value: String,
+    val label: String,
+    val next: String? = null
 )
 
 // --- Status Update Body ---
