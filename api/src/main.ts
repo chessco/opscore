@@ -9,6 +9,6 @@ async function bootstrap() {
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ extended: true, limit: '50mb' }));
   app.useWebSocketAdapter(new WsAdapter(app));
-  await app.listen(process.env.PORT ?? 3008, '0.0.0.0');
+  await app.listen(process.env.PORT ?? 3005, '0.0.0.0');
 }
 bootstrap();

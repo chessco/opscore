@@ -21,9 +21,9 @@ services:
     restart: always
     environment:
       DATABASE_URL: "mysql://root:root@mysql:3306/opscore"
-      PORT: 3008
+      PORT: 3005
     ports:
-      - "3008:3008"
+      - "3005:3005"
     depends_on:
       - mysql
     volumes:
