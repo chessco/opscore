@@ -1,0 +1,17 @@
+services:
+  api:
+    container_name: opscore-api-prod
+    build:
+      context: /opt/pitaya/opscore
+      dockerfile: ./api/Dockerfile
+    restart: always
+    env_file:
+      - .env.production
+    expose:
+      - "3005"
+    networks:
+      - pitaya_net
+
+networks:
+  pitaya_net:
+    external: true
