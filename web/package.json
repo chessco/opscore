@@ -16,7 +16,7 @@
     "lucide-react": "^0.564.0",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react-dom": "^19.2.6",
     "react-i18next": "^17.0.8",
     "react-router-dom": "^7.13.0",
     "tailwind-merge": "^3.4.0",
