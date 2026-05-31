@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
-    baseURL: `http://${window.location.hostname}:3008`, // dynamically point to the host IP instead of localhost
+    baseURL: import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3008`, // dynamically point to the host IP instead of localhost
 });
 
 api.interceptors.request.use((config) => {
