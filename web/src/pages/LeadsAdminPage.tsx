@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Users, Search, Plus, Edit2, Trash2, Loader2, X, Save, Upload, Phone, Activity } from 'lucide-react';
+import { Users, Search, Plus, Edit2, Trash2, Loader2, X, Save, Upload, Phone, RefreshCw } from 'lucide-react';
 import api from '../services/api';
 
 interface Campaign {
@@ -133,6 +133,17 @@ export default function LeadsAdminPage() {
         } catch (err) {
             console.error('Error deleting lead', err);
             alert('Error al eliminar el lead');
+        }
+    };
+
+    const handleReviveLead = async (id: string) => {
+        if (!window.confirm('¿Estás seguro de que deseas revivir este lead? Volverá a la cola para ser marcado.')) return;
+        try {
+            await api.patch(`/leads/${id}/status`, { status: 'QUEUED' });
+            fetchLeads();
+        } catch (err) {
+            console.error('Error reviving lead', err);
+            alert('Error al revivir el lead');
         }
     };
 
@@ -283,6 +294,15 @@ export default function LeadsAdminPage() {
                                         </td>
                                         <td className="py-3 px-6 text-right">
                                             <div className="flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {lead.status !== 'QUEUED' && (
+                                                    <button
+                                                        onClick={() => handleReviveLead(lead.id)}
+                                                        className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-500/10 rounded-md transition-colors"
+                                                        title="Revivir Lead (Volver a Marcar)"
+                                                    >
+                                                        <RefreshCw size={16} />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleOpenLeadModal(lead)}
                                                     className="p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-md transition-colors"
