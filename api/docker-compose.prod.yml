@@ -1,14 +1,16 @@
 services:
   api:
-    container_name: opscore-api-prod
+    container_name: opscore-api
     build:
       context: /opt/pitaya/opscore/api
       dockerfile: Dockerfile
     restart: always
     env_file:
       - .env.production
+    environment:
+      - PORT=2005
     expose:
-      - "3005"
+      - "2005"
     networks:
       - pitaya_net
 
