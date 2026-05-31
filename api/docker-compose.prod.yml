@@ -8,9 +8,9 @@ services:
     env_file:
       - .env.production
     environment:
-      - PORT=2005
+      - PORT=3005
     expose:
-      - "2005"
+      - "3005"
     networks:
       - pitaya_net
 
