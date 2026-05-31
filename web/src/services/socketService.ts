@@ -21,7 +21,13 @@ class SocketService {
     private socket: WebSocket | null = null;
     private listeners: Map<MessageType, (data: any) => void> = new Map();
     private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
-    private url = 'ws://localhost:3008/agent';
+    private url = (() => {
+        const apiUrl = import.meta.env.VITE_API_URL || '';
+        if (apiUrl) {
+            return apiUrl.replace(/^http/, 'ws') + '/agent';
+        }
+        return `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:3008/agent`;
+    })();
     private reconnectDelay = 2000;
     private maxReconnectDelay = 30000;
     private pendingQueue: WebSocketMessage[] = [];
