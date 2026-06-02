@@ -6,19 +6,24 @@ yarn-error.log*
 pnpm-debug.log*
 .npm/
 
-# Environment variables
+# Environment variables - NEVER commit production secrets
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
 .env.*.local
 
-# Vite / React
+# Vite / React build output
 dist/
 dist-ssr/
-*.local
+
+# OS
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # NestJS
 /dist
@@ -28,6 +33,8 @@ dist-ssr/
 # Prisma
 /prisma/*.db
 /prisma/*.db-journal
+api/prisma/*.db
+api/prisma/*.db-journal
 
 # Editor / IDE
 .vscode/
@@ -39,41 +46,20 @@ dist-ssr/
 docker-compose.override.yml
 .docker/
 
-# OS
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-.DS_Store
-
 # Logs
 logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
-# Database
-*.db
-*.db-journal
-api/prisma/*.db
-api/prisma/*.db-journal
-
-# Secrets & Local Scripts
+# Secrets & Local Deploy Scripts
 *.ps1
-api/*.js
-api/check.ts
-api/test_dial.ts
-api/prisma/query-users.ts
 agent_prefs.xml
 
-# Screenshots / Media
+# Media / binaries
 *.png
 *.jpg
 *.jpeg
-
-# Heap dumps / Errors
 *.hprof
 *build_error.txt
 
@@ -82,4 +68,3 @@ agent_prefs.xml
 *.key
 *.jks
 *.keystore
-

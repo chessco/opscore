@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ForbiddenException, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import { DevicesService } from './devices.service';
 import { Prisma, UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -92,5 +94,31 @@ export class DevicesController {
     // Public for now to simulate device sending it without sophisticated auth
     async heartbeat(@Param('id') id: string) {
         return this.devicesService.updateHeartbeat(id);
+    }
+
+    @Post('upload-apk')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+    @UseInterceptors(FileInterceptor('file', {
+        storage: diskStorage({
+            destination: './uploads',
+            filename: (req, file, cb) => {
+                cb(null, 'agent.apk');
+            }
+        })
+    }))
+    uploadApk(@UploadedFile() file: Express.Multer.File) {
+        return {
+            message: 'APK uploaded successfully',
+            filename: file.filename,
+            path: `/uploads/${file.filename}`
+        };
+    }
+
+    @Post('deploy-apk')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.SUPERVISOR)
+    async deployApk(@Body() payload: any) {
+        return this.devicesService.deployApk(payload);
     }
 }

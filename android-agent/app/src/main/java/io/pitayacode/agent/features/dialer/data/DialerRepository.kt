@@ -15,7 +15,7 @@ class DialerRepository @Inject constructor(
 
     fun getAuthToken(): String = prefs.getString("auth_token", "") ?: ""
     fun getCampaignId(): String = prefs.getString("campaign_id", "") ?: ""
-    fun getServerUrl(): String = prefs.getString("server_url", "http://localhost:3008") ?: "http://localhost:3008"
+    fun getServerUrl(): String = prefs.getString("server_url", "https://opscore-api.pitayacode.io") ?: "https://opscore-api.pitayacode.io"
 
     fun saveConfig(serverUrl: String, authToken: String, campaignId: String) {
         prefs.edit()

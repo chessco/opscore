@@ -15,9 +15,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Connect to Backend (Use 10.0.2.2 for Emulator, or specific IP for device)
-        // TODO: Move URL to configuration/settings
-        commandService.connect("ws://localhost:3008/agent", "test-token-123")
+        // Backend connection is now handled dynamically in AgentViewModel when config is saved.
 
         setContent {
             PitayaAgentTheme {

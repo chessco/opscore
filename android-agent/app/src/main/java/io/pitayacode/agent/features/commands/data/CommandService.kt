@@ -79,8 +79,9 @@ class CommandService @Inject constructor(
         if (_isConnected.value) return
 
         Log.i("CommandService", "Connecting to $url")
+        val wsUrl = if (url.contains("?")) "$url&token=$token" else "$url?token=$token"
         val request = Request.Builder()
-            .url(url)
+            .url(wsUrl)
             .addHeader("Authorization", "Bearer $token")
             .build()
 

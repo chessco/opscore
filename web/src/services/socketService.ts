@@ -26,7 +26,7 @@ class SocketService {
         if (apiUrl) {
             return apiUrl.replace(/^http/, 'ws') + '/agent';
         }
-        return `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:3008/agent`;
+        return `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.hostname}:3005/agent`;
     })();
     private reconnectDelay = 2000;
     private maxReconnectDelay = 30000;

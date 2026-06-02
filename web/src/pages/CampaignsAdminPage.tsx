@@ -37,7 +37,7 @@ export default function CampaignsAdminPage() {
 
     // Modal state for Leads
     const [isLeadsModalOpen, setIsLeadsModalOpen] = useState(false);
-    const [selectedCampaignForLeads, setSelectedCampaignForLeads] = useState<Campaign | null>(null);
+    const [selectedCampaignForLeads] = useState<Campaign | null>(null);
     const [leadsInput, setLeadsInput] = useState('');
     const [importingLeads, setImportingLeads] = useState(false);
 
@@ -106,11 +106,7 @@ export default function CampaignsAdminPage() {
         }
     };
 
-    const handleOpenLeadsModal = (campaign: Campaign) => {
-        setSelectedCampaignForLeads(campaign);
-        setLeadsInput('');
-        setIsLeadsModalOpen(true);
-    };
+
 
     const handleImportLeads = async () => {
         if (!selectedCampaignForLeads || !leadsInput.trim()) return;

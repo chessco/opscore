@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Search,
     Plus,
@@ -16,6 +16,7 @@ import {
     CheckSquare,
     Info
 } from 'lucide-react';
+import { deviceService } from '../services/deviceService';
 
 // Mock Data
 const MOCK_GROUPS = [
@@ -30,20 +31,46 @@ const MOCK_GROUPS = [
     { id: '4', name: 'Production', count: 110, type: 'folder', active: false },
 ];
 
-const MOCK_DEVICES = [
-    { id: 'AD-882-QX', model: 'Pixel 6a', ip: '192.168.1.104', status: 'ONLINE', tags: ['Beta', 'Dev'], type: 'phone' },
-    { id: 'AD-901-LZ', model: 'Samsung Tab S8', ip: '192.168.1.112', status: 'OFFLINE', tags: ['Legacy'], type: 'tablet' },
-    { id: 'AD-224-PF', model: 'Zebra TC52', ip: '10.42.0.15', status: 'ONLINE', tags: ['Critical'], type: 'phone' },
-    { id: 'AD-101-XC', model: 'Pixel 4 XL', ip: '192.168.1.155', status: 'ONLINE', tags: [], type: 'phone' },
-    // ... more mock data would go here
-];
 
 const TAG_COLORS = [
     'bg-blue-500', 'bg-green-500', 'bg-red-500', 'bg-purple-500', 'bg-cyan-500', 'bg-slate-500'
 ];
 
 export default function FleetConsole() {
-    const [selectedDevices, setSelectedDevices] = useState<string[]>(['AD-882-QX', 'AD-901-LZ', 'AD-224-PF']);
+    const [devices, setDevices] = useState<any[]>([]);
+    const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    const fetchDevices = async () => {
+        try {
+            setIsLoading(true);
+            const data = await deviceService.getAll();
+            setDevices(data);
+        } catch (error) {
+            console.error('Failed to fetch devices:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDevices();
+    }, []);
+
+    const handleDeleteSelected = async () => {
+        if (!confirm(`Are you sure you want to delete ${selectedDevices.length} devices?`)) return;
+        
+        try {
+            for (const id of selectedDevices) {
+                await deviceService.delete(id);
+            }
+            setSelectedDevices([]);
+            fetchDevices();
+        } catch (error) {
+            console.error('Failed to delete devices:', error);
+            alert('Failed to delete some devices.');
+        }
+    };
 
     // Toggle device selection
     const toggleDevice = (id: string) => {
@@ -159,7 +186,9 @@ export default function FleetConsole() {
                         <button className="flex items-center px-3 py-1.5 bg-[#151921] border border-[#2b303b] hover:border-white/20 rounded-lg text-xs font-bold text-gray-400 hover:text-white transition-all uppercase tracking-wide">
                             <Move size={12} className="mr-1.5" /> Move
                         </button>
-                        <button className="flex items-center px-3 py-1.5 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded-lg text-xs font-bold text-red-500 transition-all uppercase tracking-wide">
+                        <button 
+                            onClick={handleDeleteSelected}
+                            className="flex items-center px-3 py-1.5 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 rounded-lg text-xs font-bold text-red-500 transition-all uppercase tracking-wide">
                             <Trash2 size={12} className="mr-1.5" /> Delete
                         </button>
                     </div>
@@ -180,7 +209,15 @@ export default function FleetConsole() {
 
                 {/* Device Rows */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    {MOCK_DEVICES.map(device => (
+                    {isLoading ? (
+                        <div className="p-6 text-center text-[#4e5564] text-xs font-bold uppercase tracking-widest">
+                            Loading devices...
+                        </div>
+                    ) : devices.length === 0 ? (
+                        <div className="p-6 text-center text-[#4e5564] text-xs font-bold uppercase tracking-widest">
+                            No devices found. Connect an agent to auto-register.
+                        </div>
+                    ) : devices.map(device => (
                         <div
                             key={device.id}
                             onClick={() => toggleDevice(device.id)}
@@ -214,7 +251,7 @@ export default function FleetConsole() {
                             </div>
 
                             <div className="col-span-2 flex flex-wrap gap-1.5">
-                                {device.tags.length > 0 ? device.tags.map(tag => (
+                                {device.tags && device.tags.length > 0 ? device.tags.map((tag: string) => (
                                     <span key={tag} className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border flex items-center ${getTagStyle(tag)}`}>
                                         {tag} <span className="ml-1 cursor-pointer hover:text-white">×</span>
                                     </span>
@@ -247,7 +284,7 @@ export default function FleetConsole() {
                         <span className="border-l border-[#1e222d] pl-4">API Latency: 42ms</span>
                     </div>
                     <div className="flex items-center space-x-4">
-                        <span>204 Devices Managed</span>
+                        <span>{devices.length} Devices Managed</span>
                         <span className="text-blue-500">Build 8.2.1-STABLE</span>
                     </div>
                 </div>

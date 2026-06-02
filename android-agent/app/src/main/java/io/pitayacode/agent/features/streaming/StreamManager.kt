@@ -32,24 +32,29 @@ class StreamManager @Inject constructor(
     }
 
     override fun sendOffer(sessionDescription: SessionDescription) {
+        val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
         val payload = SessionDescriptionPayload(type = "offer", sdp = sessionDescription.description)
         val message = WebSocketMessage(
             type = "OFFER",
+            deviceId = androidId,
             sdp = payload
         )
         commandService.sendMessage(message)
     }
 
     override fun sendAnswer(sessionDescription: SessionDescription) {
+        val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
         val payload = SessionDescriptionPayload(type = "answer", sdp = sessionDescription.description)
         val message = WebSocketMessage(
             type = "ANSWER",
+            deviceId = androidId,
             sdp = payload
         )
         commandService.sendMessage(message)
     }
 
     override fun sendIceCandidate(iceCandidate: IceCandidate) {
+        val androidId = android.provider.Settings.Secure.getString(context.contentResolver, android.provider.Settings.Secure.ANDROID_ID)
         val payload = IceCandidatePayload(
             sdpMid = iceCandidate.sdpMid,
             sdpMLineIndex = iceCandidate.sdpMLineIndex,
@@ -57,6 +62,7 @@ class StreamManager @Inject constructor(
         )
         val message = WebSocketMessage(
             type = "CANDIDATE",
+            deviceId = androidId,
             iceCandidate = payload
         )
         commandService.sendMessage(message)

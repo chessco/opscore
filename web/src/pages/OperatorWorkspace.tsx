@@ -10,7 +10,6 @@ import {
     Signal,
     Maximize2,
     MousePointer2,
-    Building2,
     Users,
     Smartphone,
     LogOut,

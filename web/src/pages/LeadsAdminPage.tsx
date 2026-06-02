@@ -139,7 +139,7 @@ export default function LeadsAdminPage() {
     const handleReviveLead = async (id: string) => {
         if (!window.confirm('¿Estás seguro de que deseas revivir este lead? Volverá a la cola para ser marcado.')) return;
         try {
-            await api.patch(`/leads/${id}/status`, { status: 'QUEUED' });
+            await api.patch(`/leads/${id}/status`, { status: 'NEW' });
             fetchLeads();
         } catch (err) {
             console.error('Error reviving lead', err);
@@ -289,12 +289,19 @@ export default function LeadsAdminPage() {
                                                     lead.status === 'COMPLETED' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
                                                         'bg-slate-800 text-slate-400 border-slate-700'
                                                 }`}>
-                                                {lead.status}
+                                                {{
+                                                    'NEW': 'NUEVO',
+                                                    'QUEUED': 'EN COLA',
+                                                    'CONTACTING': 'LLAMANDO',
+                                                    'CONTACTED': 'CONTACTADO',
+                                                    'COMPLETED': 'COMPLETADO',
+                                                    'RETRIED': 'REINTENTO'
+                                                }[lead.status as string] || lead.status}
                                             </span>
                                         </td>
                                         <td className="py-3 px-6 text-right">
                                             <div className="flex justify-end space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                {lead.status !== 'QUEUED' && (
+                                                {lead.status !== 'NEW' && (
                                                     <button
                                                         onClick={() => handleReviveLead(lead.id)}
                                                         className="p-2 text-slate-400 hover:text-green-400 hover:bg-green-500/10 rounded-md transition-colors"

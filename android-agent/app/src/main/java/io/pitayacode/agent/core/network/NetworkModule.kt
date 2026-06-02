@@ -58,7 +58,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient, @ApplicationContext context: Context): Retrofit {
         val prefs = context.getSharedPreferences("agent_prefs", Context.MODE_PRIVATE)
-        val baseUrl = prefs.getString("server_url", "http://localhost:3008/") ?: "http://localhost:3008/"
+        val baseUrl = prefs.getString("server_url", "https://opscore-api.pitayacode.io/") ?: "https://opscore-api.pitayacode.io/"
         val normalizedUrl = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
         return Retrofit.Builder()
             .baseUrl(normalizedUrl)

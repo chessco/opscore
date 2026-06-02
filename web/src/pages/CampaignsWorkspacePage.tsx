@@ -14,11 +14,13 @@ import {
     Zap,
     Smartphone,
     Copy,
-    X
+    X,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { QRCodeSVG } from 'qrcode.react';
-import BroadcastCommand from '../components/BroadcastCommand';
+
 import api from '../services/api';
 
 interface Step {
@@ -39,7 +41,7 @@ interface SurveySchema {
 }
 
 export default function CampaignsWorkspacePage() {
-    const { user, token } = useAuthStore() as any;
+    const { user } = useAuthStore() as any;
     const [campaigns, setCampaigns] = useState<any[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
     const [activeInteraction, setActiveInteraction] = useState<any>(null);
@@ -58,6 +60,7 @@ export default function CampaignsWorkspacePage() {
     
     // UI state
     const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+    const [showToken, setShowToken] = useState(false);
     const [interactionState, setInteractionState] = useState<'IDLE' | 'DIALING' | 'RINGING' | 'ANSWERED' | 'SURVEY' | 'FINISHED'>('IDLE');
     const [loading, setLoading] = useState(false);
     const [logs, setLogs] = useState<string[]>(['Workspace de Agente inicializado.']);
@@ -312,7 +315,7 @@ export default function CampaignsWorkspacePage() {
     };
 
     // Construct the config JSON for the QR code
-    const serverUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3008`;
+    const serverUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:3005`;
     const qrConfigJson = JSON.stringify({
         server_url: serverUrl,
         auth_token: user?.token || localStorage.getItem('auth-storage')?.match(/"token":"(.*?)"/)?.[1] || '',
@@ -452,7 +455,14 @@ export default function CampaignsWorkspacePage() {
                                     <div className="flex justify-between items-center">
                                         <span className="text-[#525a6c] flex items-center gap-1"><Activity size={10} /> Estado</span>
                                         <span className="text-blue-400 font-bold uppercase text-[9px] bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-                                            {lead.status}
+                                            {{
+                                                'NEW': 'NUEVO',
+                                                'QUEUED': 'EN COLA',
+                                                'CONTACTING': 'LLAMANDO',
+                                                'CONTACTED': 'CONTACTADO',
+                                                'COMPLETED': 'COMPLETADO',
+                                                'RETRIED': 'REINTENTO'
+                                            }[lead.status as string] || lead.status}
                                         </span>
                                     </div>
                                     {lead.metadata && Object.entries(lead.metadata).map(([key, val]) => (
@@ -735,12 +745,29 @@ export default function CampaignsWorkspacePage() {
                                             Las respuestas han sido guardadas y sincronizadas exitosamente en el servidor de Pitaya Ops.
                                         </p>
                                     </div>
-                                    <div className="pt-2">
+                                    <div className="pt-2 flex justify-center space-x-3">
                                         <button
                                             onClick={handleReset}
                                             className="px-5 py-2.5 bg-[#11141b] hover:bg-white/5 border border-[#1e222d] text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
                                         >
                                             Nueva Asignación
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    if (lead?.id) {
+                                                        await api.patch(`/leads/${lead.id}/status`, { status: 'NEW' });
+                                                        addLog('Lead reactivado y reingresado a la cola de marcación.');
+                                                    }
+                                                    handleReset();
+                                                } catch (err) {
+                                                    console.error('Error reviving lead', err);
+                                                    addLog('Error al reactivar el lead.');
+                                                }
+                                            }}
+                                            className="px-5 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+                                        >
+                                            Reactivar este Lead
                                         </button>
                                     </div>
                                 </div>
@@ -765,7 +792,7 @@ export default function CampaignsWorkspacePage() {
 
             {/* QR Configuration Modal */}
             {isQRModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
                     <div className="bg-[#11141b] border border-[#1e222d] rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center p-5 border-b border-[#1e222d] bg-[#0a0c10]">
                             <h3 className="text-lg font-black tracking-tight text-white flex items-center space-x-2">
@@ -776,7 +803,7 @@ export default function CampaignsWorkspacePage() {
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="p-6 space-y-6 text-sm">
+                        <div className="p-6 space-y-6 text-sm overflow-y-auto custom-scrollbar max-h-[65vh]">
                             <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-xl text-xs text-blue-400">
                                 <p className="font-semibold">Escanea este código con la aplicación Pitaya Ops Agent de tu celular para autoconfigurar tu sesión.</p>
                             </div>
@@ -785,8 +812,8 @@ export default function CampaignsWorkspacePage() {
                                 <QRCodeSVG 
                                     value={qrConfigJson} 
                                     size={200}
-                                    level="H"
-                                    includeMargin={false}
+                                    level="L"
+                                    includeMargin={true}
                                 />
                             </div>
 
@@ -808,7 +835,10 @@ export default function CampaignsWorkspacePage() {
                                 <div className="space-y-1">
                                     <label className="text-[10px] font-bold text-[#4e5564] uppercase tracking-wider">Token JWT de Operador</label>
                                     <div className="flex items-center space-x-2">
-                                        <input type="password" readOnly value={user?.token || localStorage.getItem('auth-storage')?.match(/"token":"(.*?)"/)?.[1] || ''} className="flex-1 bg-[#0a0c10] border border-[#1e222d] rounded-lg py-2 px-3 text-slate-300 font-mono text-xs focus:outline-none" />
+                                        <input type={showToken ? "text" : "password"} readOnly value={user?.token || localStorage.getItem('auth-storage')?.match(/"token":"(.*?)"/)?.[1] || ''} className="flex-1 bg-[#0a0c10] border border-[#1e222d] rounded-lg py-2 px-3 text-slate-300 font-mono text-xs focus:outline-none" />
+                                        <button onClick={() => setShowToken(!showToken)} className="p-2 bg-[#1e222d] hover:bg-[#2b303b] rounded-lg text-slate-400 hover:text-white transition-colors">
+                                            {showToken ? <EyeOff size={14} /> : <Eye size={14} />}
+                                        </button>
                                         <button onClick={() => copyToClipboard(user?.token || localStorage.getItem('auth-storage')?.match(/"token":"(.*?)"/)?.[1] || '')} className="p-2 bg-[#1e222d] hover:bg-[#2b303b] rounded-lg text-slate-400 hover:text-white transition-colors"><Copy size={14}/></button>
                                     </div>
                                 </div>

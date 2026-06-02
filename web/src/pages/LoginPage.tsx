@@ -54,7 +54,7 @@ export default function LoginPage() {
             {/* Left Panel - Branding & Illustration */}
             <div className="hidden lg:flex w-1/2 relative flex-col justify-between p-12 border-r border-[#1e222d]">
                 {/* Background Grid Effect */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-5 pointer-events-none"></div>
+                <div className="absolute inset-0 bg-[url('/noise.svg')] opacity-5 pointer-events-none"></div>
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-900/5 to-transparent pointer-events-none"></div>
 
                 {/* Logo Area */}
@@ -135,6 +135,13 @@ export default function LoginPage() {
             {/* Right Panel - Login Form */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 lg:p-24 relative bg-[#0b0e14]">
                 <div className="w-full max-w-md">
+                    {/* Client Logo / Branding */}
+                    <div className="mb-8 flex justify-start">
+                        <div className="bg-[#f8f9fa] px-6 py-4 rounded-2xl shadow-lg shadow-black/20">
+                            <img src="/simetria-logo.png" alt="Simetría" className="h-12 object-contain" />
+                        </div>
+                    </div>
+
                     {/* Header */}
                     <div className="mb-10">
                         <h2 className="text-3xl font-black text-white tracking-tight mb-3">{t('loginTitle')}</h2>
@@ -159,10 +166,12 @@ export default function LoginPage() {
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <Server size={16} className="text-[#4e5564] group-focus-within:text-blue-500 transition-colors" />
                                 </div>
-                                <select className="w-full bg-[#151921] border border-[#2b303b] text-white text-sm rounded-xl py-3.5 pl-11 pr-10 appearance-none focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all font-medium cursor-pointer hover:bg-[#1a1f29]">
-                                    <option>{t('selectSite')}</option>
-                                    <option>Site A - North America</option>
-                                    <option>Site B - Europe</option>
+                                <select 
+                                    defaultValue="Cd Obregon"
+                                    className="w-full bg-[#151921] border border-[#2b303b] text-white text-sm rounded-xl py-3.5 pl-11 pr-10 appearance-none focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all font-medium cursor-pointer hover:bg-[#1a1f29]"
+                                >
+                                    <option value="Cd Obregon">Cd Obregon</option>
+                                    <option value="Tijuana">Tijuana</option>
                                 </select>
                                 <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
                                     <ChevronDown size={16} className="text-[#4e5564]" />

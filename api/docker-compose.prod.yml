@@ -11,6 +11,8 @@ services:
       - PORT=3005
     expose:
       - "3005"
+    volumes:
+      - /opt/pitaya/opscore/api/uploads:/usr/src/app/uploads
     networks:
       - pitaya_net
 

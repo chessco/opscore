@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
     X,
     Rocket,
@@ -8,8 +8,11 @@ import {
     AlertCircle,
     AlertTriangle,
     Play,
-    FileText
+    FileText,
+    Upload,
+    CheckCircle
 } from 'lucide-react';
+import api from '../services/api';
 
 interface BroadcastCommandProps {
     isOpen: boolean;
@@ -22,6 +25,45 @@ export default function BroadcastCommand({ isOpen, onClose }: BroadcastCommandPr
   "timeout_ms": 120000,
   "verification": "checksum_v2"
 }`);
+    const [file, setFile] = useState<File | null>(null);
+    const [status, setStatus] = useState<string>('');
+    const [isExecuting, setIsExecuting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const sourceUrl = import.meta.env.VITE_API_URL 
+        ? `${import.meta.env.VITE_API_URL}/uploads/agent.apk` 
+        : `http://${window.location.hostname}:3005/uploads/agent.apk`;
+
+    const handleExecute = async () => {
+        setIsExecuting(true);
+        try {
+            if (file) {
+                setStatus('Uploading APK...');
+                const formData = new FormData();
+                formData.append('file', file);
+                await api.post('/devices/upload-apk', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            }
+            
+            setStatus('Deploying via ADB/WebSocket...');
+            let parsedPayload = {};
+            try { parsedPayload = JSON.parse(payload); } catch(e) {}
+            
+            await api.post('/devices/deploy-apk', {
+                sourceUrl,
+                ...parsedPayload
+            });
+            
+            setStatus('Deploy command sent successfully!');
+            setFile(null);
+            setTimeout(() => setStatus(''), 4000);
+        } catch (err: any) {
+            setStatus(`Error: ${err.message}`);
+        } finally {
+            setIsExecuting(false);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -100,11 +142,30 @@ export default function BroadcastCommand({ isOpen, onClose }: BroadcastCommandPr
                                 <label className="text-[10px] font-semibold text-[#a0a5b1]">Installation Source URL</label>
                                 <span className="text-[9px] text-[#4e5564]">Required</span>
                             </div>
-                            <input
-                                value="https://cdn.enterprise.io/assets/v2.4.1.apk"
-                                readOnly
-                                className="w-full bg-[#0a0c10] border border-[#1e222d] p-3 rounded-lg text-[11px] font-mono text-blue-400 focus:outline-none"
-                            />
+                            <div className="flex gap-2 items-center w-full">
+                                <input
+                                    value={sourceUrl}
+                                    readOnly
+                                    className="flex-1 w-full bg-[#0a0c10] border border-[#1e222d] p-3 rounded-lg text-[11px] font-mono text-blue-400 focus:outline-none overflow-hidden text-ellipsis whitespace-nowrap"
+                                />
+                                <button 
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 p-3 rounded-lg border border-blue-500/30 transition-colors shrink-0"
+                                    title="Subir nuevo APK"
+                                >
+                                    <Upload size={14} />
+                                </button>
+                                <input 
+                                    type="file" 
+                                    accept=".apk" 
+                                    className="hidden" 
+                                    ref={fileInputRef} 
+                                    onChange={(e) => {
+                                        if (e.target.files?.[0]) setFile(e.target.files[0]);
+                                    }} 
+                                />
+                            </div>
+                            {file && <div className="text-[10px] text-green-400 font-medium flex items-center gap-1"><CheckCircle size={10} /> {file.name} seleccionado para subir</div>}
                         </div>
 
                         <div className="flex items-center justify-between py-1">
@@ -156,11 +217,26 @@ export default function BroadcastCommand({ isOpen, onClose }: BroadcastCommandPr
                         <AlertCircle size={16} className="group-hover:animate-pulse" />
                         <span className="tracking-tight uppercase">Emergency Stop</span>
                     </button>
-                    <button className="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95 group">
-                        <Play size={16} fill="currentColor" />
-                        <span className="tracking-tight uppercase">Execute Now</span>
+                    <button 
+                        onClick={handleExecute}
+                        disabled={isExecuting}
+                        className={`flex-1 ${isExecuting ? 'bg-blue-800' : 'bg-blue-600 hover:bg-blue-500'} text-white font-bold py-3.5 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95 group`}
+                    >
+                        {isExecuting ? (
+                            <span className="tracking-tight uppercase">{status || 'Executing...'}</span>
+                        ) : (
+                            <>
+                                <Play size={16} fill="currentColor" />
+                                <span className="tracking-tight uppercase">Execute Now</span>
+                            </>
+                        )}
                     </button>
                 </div>
+                {status && !isExecuting && (
+                    <div className="text-center text-[10px] font-medium text-green-400 p-2 bg-green-500/10 rounded-lg border border-green-500/20">
+                        {status}
+                    </div>
+                )}
                 <button className="w-full text-center text-[9px] font-bold text-[#4e5564] hover:text-[#a0a5b1] uppercase tracking-widest transition-colors">
                     Download Execution Audit Log
                 </button>

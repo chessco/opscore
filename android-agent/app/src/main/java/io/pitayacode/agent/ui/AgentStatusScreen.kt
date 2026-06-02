@@ -68,6 +68,7 @@ fun AgentStatusScreen(
     val isConnected by viewModel.isConnected.collectAsState()
     val isEnrolled by viewModel.isEnrolled.collectAsState()
     val isRemoteControlEnabled by viewModel.isRemoteControlEnabled.collectAsState()
+    val isTokenExpired by viewModel.isTokenExpired.collectAsState()
 
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     
@@ -139,11 +140,28 @@ fun AgentStatusScreen(
             },
             containerColor = DeepCharcoal
         ) { padding ->
-            Box(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
-                if (selectedTab == 0) {
-                    DialerScreen(viewModel)
-                } else {
-                    ConfigScreen(viewModel, isConnected, isEnrolled, isRemoteControlEnabled)
+            Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
+                if (isTokenExpired) {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F)),
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    ) {
+                        Text(
+                            text = "Token Vencido: Ve a Configuration y escanea un nuevo QR",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(16.dp),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    if (selectedTab == 0) {
+                        DialerScreen(viewModel)
+                    } else {
+                        ConfigScreen(viewModel, isConnected, isEnrolled, isRemoteControlEnabled)
+                    }
                 }
             }
         }
@@ -591,7 +609,7 @@ fun ConfigScreen(
             value = serverUrl,
             onValueChange = { serverUrl = it; configSaved = false },
             label = "URL del Servidor",
-            placeholder = "http://10.0.2.2:3008"
+            placeholder = "http://10.0.2.2:3005"
         )
         Spacer(modifier = Modifier.height(8.dp))
         ConfigTextField(
@@ -743,12 +761,28 @@ class AgentViewModel @Inject constructor(
     private val _dialerError = MutableStateFlow<String?>(null)
     val dialerError = _dialerError.asStateFlow()
 
+    private val _isTokenExpired = MutableStateFlow(false)
+    val isTokenExpired = _isTokenExpired.asStateFlow()
+
     private val devicePolicyManager = application.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     private val componentName = ComponentName(application, AgentDeviceAdminReceiver::class.java)
 
     init {
         checkEnrollmentStatus()
         checkAccessibilityStatus()
+        checkTokenExpiration()
+
+        // Auto-connect if we have config
+        val serverUrl = getServerUrl()
+        val authToken = getAuthToken()
+        if (serverUrl.isNotBlank() && authToken.isNotBlank()) {
+            val wsUrl = if (serverUrl.startsWith("https")) {
+                serverUrl.replace("https://", "wss://") + "/agent"
+            } else {
+                serverUrl.replace("http://", "ws://") + "/agent"
+            }
+            commandService.connect(wsUrl, authToken)
+        }
     }
 
     // --- Config helpers ---
@@ -757,6 +791,43 @@ class AgentViewModel @Inject constructor(
     fun getCampaignId() = dialerRepository.getCampaignId()
     fun saveConfig(serverUrl: String, authToken: String, campaignId: String) {
         dialerRepository.saveConfig(serverUrl, authToken, campaignId)
+        
+        // Connect to CommandService with the new config
+        if (serverUrl.isNotBlank() && authToken.isNotBlank()) {
+            checkTokenExpiration()
+            val wsUrl = if (serverUrl.startsWith("https")) {
+                serverUrl.replace("https://", "wss://") + "/agent"
+            } else {
+                serverUrl.replace("http://", "ws://") + "/agent"
+            }
+            commandService.disconnect()
+            commandService.connect(wsUrl, authToken)
+        }
+    }
+
+    fun checkTokenExpiration() {
+        val token = getAuthToken()
+        if (token.isBlank()) {
+            _isTokenExpired.value = false
+            return
+        }
+        try {
+            val parts = token.split(".")
+            if (parts.size == 3) {
+                val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+                val json = org.json.JSONObject(payload)
+                if (json.has("exp")) {
+                    val exp = json.getLong("exp")
+                    val now = System.currentTimeMillis() / 1000
+                    _isTokenExpired.value = exp < now
+                } else {
+                    _isTokenExpired.value = false
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AgentViewModel", "Failed to parse JWT", e)
+            _isTokenExpired.value = false
+        }
     }
 
     // --- Dialer Actions ---
